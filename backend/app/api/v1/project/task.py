@@ -1,18 +1,19 @@
 # app/api/routes/task.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.db.schemas.chat.message_schema import MessageOut
 from app.db.schemas.projects.tag_schema import TagOut
 from app.services.notification_service import NotificationService
 from ....db.session import get_db
-from ....models.tasks import Task
+from ....models.tasks import Task, TaskStatusEnum
 from ....db.schemas.projects.task_schema import TaskCreate, TaskUpdate, TaskOut
 from ....models.users import Users
 from ....services.auth_service import get_current_user
 from ....models.message import Message
-from ....models.project import Project, ProjectMember
+from ....models.project import Project, ProjectMember, Tag
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -86,17 +87,26 @@ def create_task(
 # -----------------------------
 @router.get("/", response_model=List[TaskOut])
 def get_tasks(
-    project_id: int | None = None,
+    project_id: Optional[int] = Query(None),
+    archived: Optional[bool] = Query(None),
+    open_only: bool = Query(False),
+    created_by_me: bool = Query(False),
+    assigned_to_me: bool = Query(False),
+    deadline_before: Optional[date] = Query(None),
+    deadline_after: Optional[date] = Query(None),
+    tags: Optional[List[str]] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, le=100),
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user),
 ):
     query = db.query(Task)
 
+    # Project scoping
     if project_id:
         require_project_membership(db, project_id, current_user.id)
         query = query.filter(Task.project_id == project_id)
     else:
-        # Only tasks from projects where user is member/owner
         query = (
             query.join(Project)
             .outerjoin(ProjectMember, ProjectMember.project_id == Task.project_id)
@@ -106,7 +116,38 @@ def get_tasks(
             )
         )
 
-    return [TaskOut.from_orm_with_assignees(task) for task in query.all()]
+    # Archived filter
+    if archived is True:
+        query = query.filter(Task.active == False)
+    elif archived is False:
+        query = query.filter(Task.active == True)
+
+    # Open tasks (active and not completed)
+    if open_only:
+        query = query.filter(Task.active == True, Task.status != TaskStatusEnum.done)
+
+    # Created by current user
+    if created_by_me:
+        query = query.filter(Task.created_by_id == current_user.id)
+
+    # Assigned to current user
+    if assigned_to_me:
+        query = query.join(Task.assignees).filter(Users.id == current_user.id)
+
+    # Deadline filters
+    if deadline_before:
+        query = query.filter(Task.deadline <= deadline_before)
+    if deadline_after:
+        query = query.filter(Task.deadline >= deadline_after)
+
+    # Tags filtering (if Task has many-to-many with Tag)
+    if tags:
+        query = query.join(Task.tags).filter(Tag.name.in_(tags)).distinct()
+
+    # Pagination
+    tasks = query.offset(skip).limit(limit).all()
+
+    return [TaskOut.from_orm_with_assignees(task) for task in tasks]
 
 
 # Bulk delete

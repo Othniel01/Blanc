@@ -1,13 +1,14 @@
 # app/api/routes/project.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
-from typing import List
+from typing import List, Optional
 from sqlalchemy.exc import IntegrityError
 
 from app.services.notification_service import NotificationService
 
 from ....db.session import get_db
-from ....models.project import Project, ProjectMember
+from ....models.project import Project, ProjectMember, Tag
 from ....models.users import Users
 from ....models.tasks import Task
 from ....models.message import Message
@@ -60,22 +61,79 @@ def create_project(
 # -----------------------------
 # Get all projects current user has access to
 # -----------------------------
-@router.get("/", response_model=List[ProjectOut])
-def get_projects(
+# @router.get("/", response_model=List[ProjectOut])
+# def get_projects(
+#     db: Session = Depends(get_db),
+#     current_user: Users = Depends(get_current_user),
+# ):
+#     projects = (
+#         db.query(Project)
+#         .join(ProjectMember, ProjectMember.project_id == Project.id)
+#         .filter(
+#             (Project.owner_id == current_user.id)
+#             | (ProjectMember.user_id == current_user.id)
+#         )
+#         .all()
+#     )
+#     if not projects:
+#         raise HTTPException(status_code=404, detail="No projects found")
+#     return projects
+
+
+@router.get("/projects")
+def list_projects(
+    manager_only: bool = Query(False),
+    member_only: bool = Query(False),
+    favourite: bool = Query(False),
+    archived: Optional[bool] = Query(None),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    tags: Optional[List[str]] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, le=100),
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user),
 ):
-    projects = (
-        db.query(Project)
-        .join(ProjectMember, ProjectMember.project_id == Project.id)
-        .filter(
-            (Project.owner_id == current_user.id)
-            | (ProjectMember.user_id == current_user.id)
+    query = db.query(Project)
+
+    # Role filtering
+    if manager_only and member_only:
+        query = query.join(ProjectMember).filter(
+            ProjectMember.user_id == current_user.id,
+            ProjectMember.role.in_(["manager", "member"]),
         )
-        .all()
-    )
-    if not projects:
-        raise HTTPException(status_code=404, detail="No projects found")
+    elif manager_only:
+        query = query.join(ProjectMember).filter(
+            ProjectMember.user_id == current_user.id, ProjectMember.role == "manager"
+        )
+    elif member_only:
+        query = query.join(ProjectMember).filter(
+            ProjectMember.user_id == current_user.id, ProjectMember.role == "member"
+        )
+
+    # Favourite filter
+    if favourite:
+        query = query.filter(Project.is_favourite == True)
+
+    # Archived filter
+    if archived is True:
+        query = query.filter(Project.active == False)
+    elif archived is False:
+        query = query.filter(Project.active == True)
+
+    # Date filters
+    if start_date:
+        query = query.filter(Project.start_date >= start_date)
+    if end_date:
+        query = query.filter(Project.start_date <= end_date)
+
+    # Tags filter
+    if tags:
+        query = query.join(Project.tags).filter(Tag.name.in_(tags)).distinct()
+
+    # Pagination
+    projects = query.offset(skip).limit(limit).all()
+
     return projects
 
 
