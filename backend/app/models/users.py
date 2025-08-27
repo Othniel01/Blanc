@@ -24,6 +24,7 @@ class Users(Base):
     # relationship to role
     role_id = Column(Integer, ForeignKey("roles.id"))
     role = relationship("Role", back_populates="users")
+    security = relationship("UserSecurity", back_populates="user", uselist=False)
 
 
 class UserSecurity(Base):
@@ -34,7 +35,7 @@ class UserSecurity(Base):
     question_id = Column(Integer, ForeignKey("security_questions.id"))
     answer_hash = Column(String, nullable=False)
 
-    user = relationship("User", back_populates="security")
+    user = relationship("Users", back_populates="security")
     question = relationship("SecurityQuestion")
 
 
