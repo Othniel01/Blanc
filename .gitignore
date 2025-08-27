@@ -1,0 +1,61 @@
+# --- Python ---
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/*.sqlite3
+backend/*.db
+
+
+# --- Virtual Environment ---
+backend/venv/
+backend/env/
+
+# --- Environment Variables ---
+backend/.env
+backend/.env.*
+
+# --- IDE / Editor junk ---
+backend/.vscode/
+backend/.idea/
+backend/*.swp
+backend/*.swo
+
+# --- Testing / Coverage ---
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# --- MyPy / Type check ---
+backend/.mypy_cache/
+backend/.dmypy.json
+
+# --- Alembic ---
+# Keep migrations, ignore generated cache
+backend/alembic/__pycache__/
+
+
+# Database
+backend/blanc.db/
+
+
+# --- General ---
+__pycache__/
+*.log
+*.sqlite3
+*.db
+
+# --- IDE / Editor junk ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Testing / Coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- MyPy / Type check ---
+.mypy_cache/
+.dmypy.json

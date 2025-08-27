@@ -1,0 +1,39 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+
+# --- Virtual Environment ---
+venv/
+env/
+
+# --- Environment Variables ---
+.env
+.env.*
+
+# --- IDE / Editor junk ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Testing / Coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- MyPy / Type check ---
+.mypy_cache/
+.dmypy.json
+
+# --- Alembic ---
+# Keep migrations, ignore generated cache
+alembic/__pycache__/
+
+
+# Database
+blanc.db/
