@@ -1,6 +1,7 @@
 # app/api/routes/task.py
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -83,8 +84,6 @@ def create_task(
 
 
 # -----------------------------
-# Read all tasks (filtered by membership)
-# -----------------------------
 @router.get("/", response_model=List[TaskOut])
 def get_tasks(
     project_id: Optional[int] = Query(None),
@@ -92,9 +91,12 @@ def get_tasks(
     open_only: bool = Query(False),
     created_by_me: bool = Query(False),
     assigned_to_me: bool = Query(False),
-    deadline_before: Optional[date] = Query(None),
-    deadline_after: Optional[date] = Query(None),
+    due_before: Optional[date] = Query(None),
+    due_after: Optional[date] = Query(None),
     tags: Optional[List[str]] = Query(None),
+    order_by: Optional[str] = Query(
+        None, description="Sort field, prefix with '-' for descending"
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(10, le=100),
     db: Session = Depends(get_db),
@@ -102,7 +104,7 @@ def get_tasks(
 ):
     query = db.query(Task)
 
-    # Project scoping
+    # Scope
     if project_id:
         require_project_membership(db, project_id, current_user.id)
         query = query.filter(Task.project_id == project_id)
@@ -116,33 +118,60 @@ def get_tasks(
             )
         )
 
-    # Archived filter
+    # Archived
     if archived is True:
         query = query.filter(Task.active == False)
     elif archived is False:
         query = query.filter(Task.active == True)
 
-    # Open tasks (active and not completed)
+    # Open = active & not done
     if open_only:
-        query = query.filter(Task.active == True, Task.status != TaskStatusEnum.done)
+        query = query.filter(
+            Task.active == True,
+            Task.status.in_(
+                [
+                    TaskStatusEnum.in_progress,
+                    TaskStatusEnum.changes_requested,
+                    TaskStatusEnum.approved,
+                ]
+            ),
+        )
 
     # Created by current user
     if created_by_me:
-        query = query.filter(Task.created_by_id == current_user.id)
+        query = query.filter(Task.creator_id == current_user.id)
 
     # Assigned to current user
     if assigned_to_me:
         query = query.join(Task.assignees).filter(Users.id == current_user.id)
 
-    # Deadline filters
-    if deadline_before:
-        query = query.filter(Task.deadline <= deadline_before)
-    if deadline_after:
-        query = query.filter(Task.deadline >= deadline_after)
+    # Due dates
+    if due_before:
+        query = query.filter(Task.due_date <= due_before)
+    if due_after:
+        query = query.filter(Task.due_date >= due_after)
 
-    # Tags filtering (if Task has many-to-many with Tag)
+    # Tags
     if tags:
         query = query.join(Task.tags).filter(Tag.name.in_(tags)).distinct()
+
+    # Sorting
+    if order_by:
+        desc_order = order_by.startswith("-")
+        field_name = order_by.lstrip("-")
+
+        sort_map = {
+            "due_date": Task.due_date,
+            "priority": Task.priority,
+            "created_at": Task.created_at,
+            "updated_at": Task.updated_at,
+            "name": Task.name,
+        }
+
+        if field_name in sort_map:
+            query = query.order_by(
+                desc(sort_map[field_name]) if desc_order else asc(sort_map[field_name])
+            )
 
     # Pagination
     tasks = query.offset(skip).limit(limit).all()

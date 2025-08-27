@@ -1,0 +1,4 @@
+INSERT INTO security_questions (question) VALUES
+('What is the name of your first pet?'),
+('What is the name of your primary school?'),
+('What city were you born in?');

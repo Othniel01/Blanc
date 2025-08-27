@@ -24,3 +24,22 @@ class Users(Base):
     # relationship to role
     role_id = Column(Integer, ForeignKey("roles.id"))
     role = relationship("Role", back_populates="users")
+
+
+class UserSecurity(Base):
+    __tablename__ = "user_security"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    question_id = Column(Integer, ForeignKey("security_questions.id"))
+    answer_hash = Column(String, nullable=False)
+
+    user = relationship("User", back_populates="security")
+    question = relationship("SecurityQuestion")
+
+
+class SecurityQuestion(Base):
+    __tablename__ = "security_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    question = Column(String, nullable=False, unique=True)
