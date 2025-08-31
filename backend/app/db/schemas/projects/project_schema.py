@@ -2,6 +2,8 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
+from app.db.schemas.user_profile_schema import UserProfileResponse
+
 
 # ---------- Shared Base ----------
 class ProjectBase(BaseModel):
@@ -66,6 +68,7 @@ class ProjectMemberOut(ProjectMemberBase):
     project_id: int
     user_id: int
     joined_at: datetime
+    user: UserProfileResponse
 
     class Config:
         orm_mode = True

@@ -656,7 +656,14 @@ def list_project_members(
             status_code=403, detail="Not authorized to view members of this project"
         )
 
-    return db.query(ProjectMember).filter(ProjectMember.project_id == project_id).all()
+    members = (
+        db.query(ProjectMember)
+        .options(joinedload(ProjectMember.user))
+        .filter(ProjectMember.project_id == project_id)
+        .all()
+    )
+
+    return members
 
 
 @router.delete("/{project_id}/members/{user_id}", status_code=204)

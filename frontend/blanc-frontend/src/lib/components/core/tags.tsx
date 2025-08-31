@@ -90,7 +90,7 @@ export default function TagsInput({ availableTags, onChange }: TagsInputProps) {
     </div>
 
     {/* Input always goes to new line under tags */}
-    <Command className="mt-2 border-none shadow-none w-full">
+    <Command className="mt-2 border-none shadow-none w-full ">
       <CommandInput
         placeholder="Add tags..."
         value={inputValue}

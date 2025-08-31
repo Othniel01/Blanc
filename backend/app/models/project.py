@@ -1,3 +1,4 @@
+import enum
 from sqlalchemy import (
     Column,
     Integer,
@@ -7,9 +8,11 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Table,
+    Enum,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 
 from ..db.session import Base
 
@@ -20,6 +23,14 @@ project_tags = Table(
     Column("project_id", Integer, ForeignKey("projects.id", ondelete="CASCADE")),
     Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE")),
 )
+
+
+class ProjectStatusEnum(str, enum.Enum):
+    in_progress = "in_progress"
+    changes_requested = "changes_requested"
+    approved = "approved"
+    cancelled = "cancelled"
+    done = "done"
 
 
 class Project(Base):
@@ -44,7 +55,7 @@ class Project(Base):
     allow_timesheets = Column(Boolean, default=False)
 
     # Status
-    status = Column(String, default="draft")
+    status = Column(Enum(ProjectStatusEnum), default=ProjectStatusEnum.in_progress)
     active = Column(Boolean, default=True)  # archive toggle
 
     # Add this relationship to ProjectMember
@@ -113,3 +124,5 @@ class ProjectMember(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     role = Column(String, default="member")  # e.g. member, manager, viewer
     joined_at = Column(DateTime, server_default=func.now())
+
+    user = relationship("Users", back_populates="project_members")

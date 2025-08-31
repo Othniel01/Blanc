@@ -25,6 +25,7 @@ class Users(Base):
     role_id = Column(Integer, ForeignKey("roles.id"))
     role = relationship("Role", back_populates="users")
     security = relationship("UserSecurity", back_populates="user", uselist=False)
+    project_members = relationship("ProjectMember", back_populates="user")
 
 
 class UserSecurity(Base):

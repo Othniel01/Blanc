@@ -16,7 +16,7 @@ export default function Notebook({ pages }: NotebookProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <div className="w-full mt-10">
+    <div className="w-full  mt-10">
       {/* Navbar */}
       <div className="notebook pl-5 navbar">
         <ul className="text-sm  flex  items-center">
@@ -24,7 +24,7 @@ export default function Notebook({ pages }: NotebookProps) {
             <li
               key={idx}
               onClick={() => setActiveIndex(idx)}
-              className={`cursor-pointer pt-2 pb-2 px-4 transition-colors 
+              className={`cursor-pointer pt-2  pb-2 px-4 transition-colors 
                 ${activeIndex === idx 
                   ? "border-t border-l border-r active-note-page border-gray-200 border-b-0 bg-white" 
                   : "text-gray-600 hover:text-teal-700"}`}

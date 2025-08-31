@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/lib/components/app-sidebar"
-import { NavActions } from "@/lib/components/nav-actions"
+// import { NavActions } from "@/lib/components/nav-actions"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,7 +34,7 @@ function MainLayout({ children }: MainLayoutProps) {
               className="mr-2 data-[orientation=vertical]:h-4"
             />
             
-        <Breadcrumb>
+        {/* <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
@@ -56,7 +56,7 @@ function MainLayout({ children }: MainLayoutProps) {
           <BreadcrumbPage>Office Renovation</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
-    </Breadcrumb>
+    </Breadcrumb> */}
           </div>
           <div className="ml-auto px-3">
             {/* <NavActions /> */}

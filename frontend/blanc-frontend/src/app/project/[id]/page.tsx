@@ -1,18 +1,24 @@
 "use client";
 import { DateRangePicker } from "@/lib/components/date-range";
 import { MainLayout } from "@/lib/components/layout";
-import Notebook from "@/lib/components/notebook";
-import TagsInput from "@/lib/components/tags";
-import { ArrowRightIcon } from "lucide-react";
-// import { FormSchema } from "@/lib/components/views/form/form";
-// import FormView from "@/lib/components/views/form/formView";
+import Notebook from "@/lib/components/core/notebook";
+import TagsInput from "@/lib/components/core/tags";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/lib/components/ui/breadcrumb";
+import { SaveIcon, SlashIcon, XIcon } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/lib/components/ui/button";
+import { TableDemo } from "@/lib/components/core/table";
+import MessageBox from "@/lib/components/core/chat";
 
-
-
-
-
-export default function project_id(){
-   const availableTags = [
+export default function project_id() {
+  const availableTags = [
     { id: 1, name: "Urgent" },
     { id: 2, name: "Backend" },
     { id: 3, name: "Frontend" },
@@ -23,70 +29,127 @@ export default function project_id(){
     // send to backend: IDs for existing tags, new names for creation
   };
 
-    return(
-        
-        <MainLayout>
-            <div className="bg-[#f5f6f8] w-full p-4 h-full">
+  return (
+    <MainLayout>
+      <div className="bg-[#f5f6f8] w-full  p-4 h-full">
+        <div className="flex gap-4 items-center">
+          <div className="flex gap-2 items-center">
+            <Button className="h-8  hover:bg-green-600">
+              <SaveIcon /> Save
+            </Button>
+            <Button variant="outline" className="h-8">
+              <XIcon className="" />
+              Discard
+            </Button>
+          </div>
+          <Breadcrumb className="text-sm">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <SlashIcon />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/components">Projects</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <SlashIcon />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Office Renovation</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
 
-            
+        <div className="flex h-[94%] gap-2 justify-between  mt-4 w-full ">
+          <div className="bg-white w-[68%]  h-full border-1 border-solid border-sidebar-border">
+            {/* title input */}
+            <div className="p-5">
+              <input
+                type="text"
+                className="w-[60%] border-[transparent] text-3xl placeholder:text-3xl placeholder:font-normal font-semibold h-10 border-0 border-b-1   hover:border-gray-400   focus:border-teal-700 outline-none"
+                placeholder="eg. Office Party"
+                name="name"
+                id="name"
+              />
 
-
-
-            <div className="bg-white w-[70%]   border-1 border-solid border-sidebar-border h-full">
-                {/* title input */}
-                <div className="p-5">
-                <input type="text" className="w-[60%] border-[transparent] text-3xl placeholder:text-3xl placeholder:font-normal font-semibold h-10 border-0 border-b-1   hover:border-gray-400   focus:border-teal-700 outline-none" placeholder="eg. Office Party" name="name" id="name" />
-
-                <div className="column w-full  flex mt-5 ">
-                        <div className=" w-full  ">
-                            {/* tags one to many field */}
-                            <div className="flex w-full  gap-10">
-                                <label htmlFor="tags" className="text-sm font-medium">Tags</label>
-                                <TagsInput availableTags={availableTags} onChange={handleTagsChange} />
-                                {/* <input type="text" className="w-[60%] border-[transparent] text-sm placeholder:text-sm font-normal h-10 border-0 border-b-1   hover:border-gray-200   focus:border-teal-700 outline-none" name="timeline" id="timeline" /> */}
-                            </div>
-                            <div className="w-full flex items-center gap-10">
-                                <label htmlFor="tags" className="text-sm font-medium">Planned Date</label>
-                                <div className="w-[60%] flex gap-5 items-center">
-                                    <DateRangePicker value={{ from: new Date(2025, 0, 1), to: new Date(2025, 0, 15) }} onChange={(range) => console.log("Picked:", range)}/>
-                                </div>
-                                
-                            </div>
-                        </div>
-                         <div className="w-full ">
-                            <div className="flex w-full items-center gap-10">
-                                <label htmlFor="project-manager" className="text-sm font-medium">Project Manager</label>
-                            <input type="text" className="w-[60%] border-[transparent] text-sm placeholder:text-sm font-normal h-10 border-0 border-b-1   hover:border-gray-200   focus:border-teal-700 outline-none" name="project-manager" id="project-manager" />
-                            </div>
-                            {/* project manager many to one field */}
-                            
-                        </div>
+              <div className="column w-full  flex mt-5 ">
+                <div className=" w-[60%]  ">
+                  {/* tags one to many field */}
+                  <div className="flex w-full  gap-10">
+                    <label htmlFor="tags" className="text-sm font-medium">
+                      Tags
+                    </label>
+                    <TagsInput
+                      availableTags={availableTags}
+                      onChange={handleTagsChange}
+                    />
+                  </div>
+                  <div className="w-full flex items-center gap-10">
+                    <label htmlFor="tags" className="text-sm font-medium">
+                      Planned Date
+                    </label>
+                    <div className="w-[60%] flex gap-5 items-center">
+                      <DateRangePicker
+                        value={{
+                          from: new Date(2025, 0, 1),
+                          to: new Date(2025, 0, 15),
+                        }}
+                        onChange={(range) => console.log("Picked:", range)}
+                      />
+                    </div>
+                  </div>
                 </div>
-                </div>
-                    <Notebook pages={[
-        {
-          title: "Description",
-          content: (
-            <textarea
-              className="w-full resize-none text-sm placeholder:text-sm border-0 outline-none h-80"
-              placeholder="Project description..."
+              </div>
+            </div>
+            <Notebook
+              pages={[
+                {
+                  title: "Description",
+                  content: (
+                    <textarea
+                      className="w-full resize-none text-sm placeholder:text-sm border-0 outline-none h-80"
+                      placeholder="Project description..."
+                    />
+                  ),
+                },
+                {
+                  title: "Project Members",
+                  content: (
+                    <div className="">
+                      <div className="flex w-full items-center gap-10">
+                        <label
+                          htmlFor="project-manager"
+                          className="text-sm font-medium"
+                        >
+                          Project Member
+                        </label>
+                        <div className="flex w-[20%] items-center">
+                          <input
+                            type="text"
+                            className="w-full border-[transparent] text-sm placeholder:text-sm font-normal h-10 border-0 border-b-1   hover:border-gray-200   focus:border-teal-700 outline-none"
+                            name="timeline"
+                            id="timeline"
+                          />
+                          <Button>Invite</Button>
+                        </div>
+                      </div>
+                      <TableDemo />
+                    </div>
+                  ),
+                },
+              ]}
             />
-          ),
-        },
-        {
-          title: "Project Members",
-          content: <div>Members form / list here</div>,
-        },
-        {
-          title: "Users",
-          content: <div>Users form / list here</div>,
-        },
-      ]} />
-            </div>
-
-            
-
-            </div>
-        </MainLayout>
-    )
+          </div>
+          <MessageBox />
+        </div>
+      </div>
+    </MainLayout>
+  );
 }
