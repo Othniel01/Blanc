@@ -115,6 +115,8 @@ class Stage(Base):
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"))
     project = relationship("Project", back_populates="stages")
 
+    tasks = relationship("Task", back_populates="stage", cascade="all, delete-orphan")
+
 
 class ProjectMember(Base):
     __tablename__ = "project_members"

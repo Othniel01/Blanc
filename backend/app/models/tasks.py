@@ -58,8 +58,10 @@ class Task(Base):
     milestone_id = Column(Integer, ForeignKey("milestones.id", ondelete="SET NULL"))
     milestone = relationship("Milestone", backref="tasks")
 
-    stage_id = Column(Integer, ForeignKey("stages.id", ondelete="SET NULL"))
-    stage = relationship("Stage", backref="tasks")
+    stage_id = Column(
+        Integer, ForeignKey("stages.id", ondelete="SET NULL"), nullable=True
+    )
+    stage = relationship("Stage", back_populates="tasks")
 
     parent_task_id = Column(
         Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True

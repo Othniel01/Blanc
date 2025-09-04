@@ -26,6 +26,9 @@ class Users(Base):
     role = relationship("Role", back_populates="users")
     security = relationship("UserSecurity", back_populates="user", uselist=False)
     project_members = relationship("ProjectMember", back_populates="user")
+    refresh_tokens = relationship(
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class UserSecurity(Base):

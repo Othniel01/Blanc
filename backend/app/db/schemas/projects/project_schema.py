@@ -2,7 +2,7 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
-from app.db.schemas.user_profile_schema import UserProfileResponse
+from app.db.schemas.user_profile_schema import UserProfileOut, UserProfileResponse
 
 
 # ---------- Shared Base ----------
@@ -31,6 +31,8 @@ class ProjectCreate(ProjectBase):
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    start_date: datetime
+    end_date: Optional[datetime] = None
     is_favourite: Optional[bool] = None
     allow_milestones: Optional[bool] = None
     allow_timesheets: Optional[bool] = None
@@ -47,6 +49,7 @@ class ProjectOut(ProjectBase):
     created_at: datetime
     is_favourite: Optional[bool] = None
     updated_at: Optional[datetime] = None
+    owner: UserProfileOut
 
     class Config:
         from_attributes = True

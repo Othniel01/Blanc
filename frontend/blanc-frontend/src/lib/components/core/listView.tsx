@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { Checkbox } from "@/lib/components/ui/checkbox";
+import { Badge } from "../ui/badge";
 
 // Types
 type Column = {
@@ -38,6 +40,8 @@ export function ListView({ columns, data }: ListViewProps) {
   const [visibleCols, setVisibleCols] = React.useState<Set<string>>(
     new Set(columns.map((c) => c.key))
   );
+
+  const router = useRouter();
 
   const [selected, setSelected] = React.useState<Set<number>>(new Set());
 
@@ -106,7 +110,13 @@ export function ListView({ columns, data }: ListViewProps) {
               <Button variant="outline">Status</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {["active", "archived", "draft"].map((s) => (
+              {[
+                "in_progress",
+                "changes_requested",
+                "approved",
+                "cancelled",
+                "done",
+              ].map((s) => (
                 <DropdownMenuItem key={s} onClick={() => setStatus(s)}>
                   {s}
                 </DropdownMenuItem>
@@ -177,13 +187,15 @@ export function ListView({ columns, data }: ListViewProps) {
                       return (
                         <TableCell key={col.key}>
                           <div className="flex flex-wrap gap-1">
-                            {tags.slice(0, 2).map((tag: string, i: number) => (
-                              <span
-                                key={i}
-                                className="px-2 py-0.5 text-xs bg-gray-100 rounded"
+                            {tags.slice(0, 2).map((tag: any) => (
+                              <Badge
+                                key={tag.id}
+                                className="px-2 py-0.5 text-xs"
+                                style={{ backgroundColor: tag.color }}
+                                variant="default"
                               >
-                                {truncate(tag)}
-                              </span>
+                                {truncate(tag.name)}
+                              </Badge>
                             ))}
                             {tags.length > 2 && (
                               <span className="text-xs text-gray-400">
@@ -213,7 +225,9 @@ export function ListView({ columns, data }: ListViewProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => alert("Edit row")}>
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/project/${row.id}`)}
+                      >
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => alert("Duplicate row")}>

@@ -1,14 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from starlette import status
 
+from app.models.refresh_token import RefreshToken
 from app.models.roles import Role
 from app.services.uuid_generator import generate_invite_code
 from ....models.users import Users
-from ....core.security.security import bcrypt_context, create_access_token
+from ....core.security.security import (
+    bcrypt_context,
+    create_access_token,
+    create_refresh_token,
+)
 from ....db.deps import db_dependency
-from ....db.schemas.auth.auth import CreateUserRequest, Token
+from ....db.schemas.auth.auth import (
+    CreateUserRequest,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
+    Token,
+)
 from fastapi.security import OAuth2PasswordRequestForm
 from ....services.auth_service import authenticate_user
 from ....core.config import settings
@@ -65,11 +75,55 @@ async def login_for_access_token(
 
     role_name = user.role.name if user.role else "user"
 
-    token = create_access_token(
+    access_token = create_access_token(
         user.username,
         user.id,
-        role_name,  # role from roles table
+        role_name,
         timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
-    return {"access_token": token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(user.id, db)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "refresh_token": refresh_token.token,
+    }
+
+
+@router.post("/refresh", response_model=RefreshTokenResponse)
+async def refresh_access_token(request: RefreshTokenRequest, db: db_dependency):
+    db_token = (
+        db.query(RefreshToken)
+        .filter(
+            RefreshToken.token == request.refresh_token, RefreshToken.revoked == False
+        )
+        .first()
+    )
+    if not db_token or db_token.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    user = db_token.user
+    role_name = user.role.name if user.role else "user"
+
+    access_token = create_access_token(
+        user.username,
+        user.id,
+        role_name,
+        timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+async def logout(refresh_token: str, db: db_dependency):
+    db_token = (
+        db.query(RefreshToken).filter(RefreshToken.token == refresh_token).first()
+    )
+    if not db_token:
+        raise HTTPException(status_code=404, detail="Refresh token not found")
+
+    db_token.revoked = True
+    db.commit()
+    return {"msg": "Logged out successfully"}

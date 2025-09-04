@@ -1,5 +1,5 @@
 // src/lib/services/auth.ts
-export const TOKEN_KEY = "token";
+export const TOKEN_KEY = "access_token";
 
 // ✅ Get token
 export function getToken(): string | null {

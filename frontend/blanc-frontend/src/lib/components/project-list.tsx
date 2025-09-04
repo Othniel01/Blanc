@@ -1,37 +1,26 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { ListView } from "@/lib/components/core/listView";
+import { fetchProjectsWithTags } from "@/lib/services/projectHelper";
 
 export default function ProjectsPage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [projects, setProjects] = useState<any[]>([]);
+
   const columns = [
     { key: "id", label: "ID" },
     { key: "name", label: "Project Name" },
-    { key: "tags", label: "Tags" }, // ✅ Added this
+    { key: "tags", label: "Tags" },
     { key: "owner", label: "Owner" },
     { key: "status", label: "Status" },
   ];
 
-  const data = [
-    {
-      id: 1,
-      name: "School System",
-      tags: ["Design", "Feature"],
-      owner: "Ben",
-      status: "active",
-    },
-    {
-      id: 2,
-      name: "Inventory",
-      tags: ["Backend", "Database", "Performance"],
-      owner: "Sarah",
-      status: "archived",
-    },
-    {
-      id: 3,
-      name: "Clinic Module",
-      tags: ["UI", "React", "Next.js", "Feature"],
-      owner: "John",
-      status: "draft",
-    },
-  ];
+  useEffect(() => {
+    fetchProjectsWithTags()
+      .then(setProjects)
+      .catch((err) => console.error("Failed to load projects", err));
+  }, []);
 
-  return <ListView columns={columns} data={data} />;
+  return <ListView columns={columns} data={projects} />;
 }

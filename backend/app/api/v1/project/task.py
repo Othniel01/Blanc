@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from app.db.schemas.chat.message_schema import MessageOut
 from app.db.schemas.projects.tag_schema import TagOut
+from app.db.schemas.user_profile_schema import UserProfileResponse
 from app.services.notification_service import NotificationService
 from ....db.session import get_db
 from ....models.tasks import Task, TaskStatusEnum
@@ -14,7 +15,7 @@ from ....db.schemas.projects.task_schema import TaskCreate, TaskUpdate, TaskOut
 from ....models.users import Users
 from ....services.auth_service import get_current_user
 from ....models.message import Message
-from ....models.project import Project, ProjectMember, Tag
+from ....models.project import Project, ProjectMember, Stage, Tag
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -392,6 +393,22 @@ def update_task(
     return TaskOut.from_orm_with_assignees(task)
 
 
+@router.patch("/{task_id}/stage")
+def move_task_stage(task_id: int, stage_id: int, db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    stage = db.query(Stage).filter(Stage.id == stage_id).first()
+    if not stage:
+        raise HTTPException(status_code=404, detail="Stage not found")
+
+    task.stage_id = stage_id
+    db.commit()
+    db.refresh(task)
+    return {"ok": True, "task_id": task.id, "new_stage": stage_id}
+
+
 # Archive
 
 
@@ -659,13 +676,15 @@ def assign_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    # Ensure the current user is a project member (permission check)
     require_project_membership(db, task.project_id, current_user.id)
 
+    # Check if the target user exists
     user = db.query(Users).filter(Users.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Optional: check that the target user is also a project member
+    # Ensure the target user is a member of the project
     membership = (
         db.query(ProjectMember)
         .filter(
@@ -674,24 +693,45 @@ def assign_task(
         )
         .first()
     )
-    if not membership and task.project.owner_id != user.id:
-        raise HTTPException(status_code=403, detail="User must be a project member")
+    if not membership:
+        raise HTTPException(
+            status_code=403, detail="User must be a project member to be assigned"
+        )
 
+    # Assign the user if not already assigned
     if user not in task.assignees:
         task.assignees.append(user)
         db.commit()
         db.refresh(task)
 
-    notification_service = NotificationService(db)
-    notification_service.notify(
-        user_id=user.id,
-        notif_type="task",
-        message=f"You’ve been assigned to task '{task.name}'",
-        entity_type="Task",
-        entity_id=task.id,
-    )
+        notification_service = NotificationService(db)
+        notification_service.notify(
+            user_id=user.id,
+            notif_type="task",
+            message=f"You’ve been assigned to task '{task.name}'",
+            entity_type="Task",
+            entity_id=task.id,
+        )
 
     return {"message": f"User {user_id} assigned to task {task_id}"}
+
+
+# Get  assignees
+@router.get("/{task_id}/assignees", response_model=List[UserProfileResponse])
+def get_task_assignees(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Ensure requester has access to the project
+    require_project_membership(db, task.project_id, current_user.id)
+
+    # Return assignees with profile info
+    return [UserProfileResponse.model_validate(user) for user in task.assignees]
 
 
 # -----------------------------

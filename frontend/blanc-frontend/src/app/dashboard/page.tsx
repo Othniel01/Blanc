@@ -32,12 +32,34 @@ export default function Page() {
         // Optionally enrich each project with tags + tasks + owner image
         const enriched = await Promise.all(
           data.map(async (project: any) => {
-            const tags = await fetchProjectTags(project.id);
-            const tasks = await fetchProjectTasks(project.id);
-            const user = await fetchMe();
+            let tags: any[] = [];
+            let tasks: any[] = [];
+            let user: any = {};
+
+            try {
+              tags = (await fetchProjectTags(project.id)) ?? [];
+            } catch (e) {
+              console.warn(`Failed to fetch tags for project ${project.id}`, e);
+            }
+
+            try {
+              tasks = (await fetchProjectTasks(project.id)) ?? [];
+            } catch (e) {
+              console.warn(
+                `Failed to fetch tasks for project ${project.id}`,
+                e
+              );
+            }
+
+            try {
+              user = (await fetchMe()) ?? {};
+            } catch (e) {
+              console.warn("Failed to fetch current user", e);
+            }
+
             return {
               ...project,
-              tags: tags.map((t: any) => t.name),
+              tags,
               tasks: tasks.length,
               avatar: user.profile_image || "https://github.com/shadcn.png",
               dueDate: project.end_date
@@ -100,19 +122,31 @@ export default function Page() {
                     <h1 className="font-medium text-base">{project.name}</h1>
                   </div>
                   <div className="flex mt-2 gap-2 items-center">
-                    {project.tags.map((tag: string, i: number) => (
+                    {project.tags.slice(0, 3).map((tag: any) => (
                       <div
-                        key={i}
-                        className="text-xs px-2 py-1 text-amber-800 bg-amber-400 rounded-full"
+                        key={tag.id}
+                        className="text-xs px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor: tag.color ?? "#5F18DB",
+                          color: "#FFFFFF",
+                        }}
                       >
-                        {tag}
+                        {tag.name}
                       </div>
                     ))}
+                    {project.tags.length > 3 && (
+                      <div
+                        key={`${project.id}-overflow`}
+                        className="text-xs px-2 py-1 rounded-full bg-gray-300 text-gray-800"
+                      >
+                        +{project.tags.length - 3}
+                      </div>
+                    )}
                   </div>
                   <div className="w-full h-[40px]" />
                 </div>
                 <div className="absolute right-4 top-4">
-                  <MoreButton />
+                  <MoreButton projectId={project.id} />
                 </div>
                 <div className="absolute pr-8 bottom-2 w-full">
                   <div className="flex items-center justify-between">

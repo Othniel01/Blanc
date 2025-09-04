@@ -1,74 +1,64 @@
-// const projects = [
-//   {
-//     id: 1,
-//     title: "Office Cleaning",
-//     tags: ["Cleaning", "Corporate"],
-//     tasks: 10,
-//     dueDate: "21/03/2024",
-//     avatar: "https://github.com/shadcn.png",
-//   },
-//   {
-//     id: 2,
-//     title: "Website Redesign",
-//     tags: ["Design", "UI/UX"],
-//     tasks: 8,
-//     dueDate: "15/04/2024",
-//     avatar: "https://github.com/shadcn.png",
-//   },
-//   {
-//     id: 3,
-//     title: "Marketing Campaign",
-//     tags: ["Marketing", "Ads"],
-//     tasks: 12,
-//     dueDate: "01/05/2024",
-//     avatar: "https://github.com/shadcn.png",
-//   },
-//   {
-//     id: 4,
-//     title: "Product Launch",
-//     tags: ["Launch", "Sales"],
-//     tasks: 5,
-//     dueDate: "10/06/2024",
-//     avatar: "https://github.com/shadcn.png",
-//   },
-// ];
+import endpoint from "./init";
+import { authFetch } from "./http";
 
-// export default projects;
+// generic fetch with auth
 
-export async function authFetch(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("token"); // get latest stored token
-  if (!token) throw new Error("No auth token found");
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Bearer ${token}`, // attach token
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch ${url}`);
-  }
-  return res.json();
-}
-
+// get all projects
 export async function fetchProjects() {
-  return authFetch("http://localhost:8000/projects/projects");
+  return authFetch(`${endpoint}/projects/projects`);
 }
 
+// get single project
 export async function fetchProjectById(projectId: number) {
-  return authFetch(`http://localhost:8000/projects/projects/${projectId}`);
+  return authFetch(`${endpoint}/projects/${projectId}`);
 }
 
+// update project
+export async function updateProject(projectId: number, payload: unknown) {
+  return authFetch(`${endpoint}/projects/${projectId}`, {
+    method: "PUT", // or PATCH depending on your backend
+    body: JSON.stringify(payload),
+  });
+}
+
+// get project tags safely
 export async function fetchProjectTags(projectId: number) {
-  return authFetch(`http://localhost:8000/projects/${projectId}/tags`);
+  try {
+    return (await authFetch(`${endpoint}/projects/${projectId}/tags`)) ?? [];
+  } catch (e) {
+    console.warn(`Failed to fetch tags for project ${projectId}`, e);
+    return [];
+  }
 }
 
+// get project tasks safely
 export async function fetchProjectTasks(projectId: number) {
-  return authFetch(`http://localhost:8000/projects/${projectId}/tasks`);
+  try {
+    return (await authFetch(`${endpoint}/projects/${projectId}/tasks`)) ?? [];
+  } catch (e) {
+    console.warn(`Failed to fetch tasks for project ${projectId}`, e);
+    return [];
+  }
+}
+// get current user
+export async function fetchMe() {
+  return authFetch(`${endpoint}/users/me`);
 }
 
-export async function fetchMe() {
-  return authFetch("http://localhost:8000/users/me");
+export async function getProjectMembers(projectId: number) {
+  return authFetch(`${endpoint}/projects/${projectId}/members`);
+}
+
+export async function addProjectMember(projectId: number, inviteCode: string) {
+  return authFetch(`${endpoint}/projects/${projectId}/members`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ invite_code: inviteCode }),
+  });
+}
+
+export async function removeProjectMember(projectId: number, userId: number) {
+  return authFetch(`${endpoint}/projects/${projectId}/members/${userId}`, {
+    method: "DELETE",
+  });
 }

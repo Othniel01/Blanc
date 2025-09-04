@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/lib/components/app-sidebar"
+import { AppSidebar } from "@/lib/components/app-sidebar";
 // import { NavActions } from "@/lib/components/nav-actions"
 import {
   Breadcrumb,
@@ -7,15 +7,16 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/lib/components/ui/breadcrumb"
+} from "@/lib/components/ui/breadcrumb";
 import { SlashIcon } from "lucide-react";
 import Link from "next/link";
-import { Separator } from "@/lib/components/ui/separator"
+import { Separator } from "@/lib/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/lib/components/ui/sidebar"
+} from "@/lib/components/ui/sidebar";
+import LogoutButton from "../core/logout";
 
 interface MainLayoutProps {
   children?: React.ReactNode;
@@ -33,8 +34,8 @@ function MainLayout({ children }: MainLayoutProps) {
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
-            
-        {/* <Breadcrumb>
+
+            {/* <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
@@ -60,12 +61,13 @@ function MainLayout({ children }: MainLayoutProps) {
           </div>
           <div className="ml-auto px-3">
             {/* <NavActions /> */}
+            <LogoutButton />
           </div>
         </header>
         {children}
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
 
 export default MainLayout;

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/lib/components/ui/card";
 import { Input } from "@/lib/components/ui/input";
 import { Label } from "@/lib/components/ui/label";
 import Image from "next/image";
+import endpoint from "@/lib/routes/init";
 
 export function LoginForm({
   className,
@@ -25,28 +26,22 @@ export function LoginForm({
     setError("");
 
     try {
-      const res = await fetch("http://localhost:8000/auth/token", {
+      const res = await fetch(`${endpoint}/auth/token`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          username,
-          password,
-        }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ username, password }),
       });
 
-      if (!res.ok) {
-        throw new Error("Invalid username or password");
-      }
+      if (!res.ok) throw new Error("Invalid username or password");
 
       const data = await res.json();
 
-      // ✅ Save JWT for later requests
-      localStorage.setItem("token", data.access_token);
+      // ✅ Save tokens first
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
 
-      // ✅ Redirect to dashboard after login
-      router.push("/dashboard");
+      // ✅ Only now navigate to dashboard
+      router.replace("/dashboard"); // use replace to prevent back button
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -80,6 +75,12 @@ export function LoginForm({
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
+                  <a
+                    href="#"
+                    className="ml-auto text-sm underline-offset-2 hover:underline"
+                  >
+                    Forgot your password?
+                  </a>
                 </div>
                 <Input
                   id="password"
@@ -96,11 +97,18 @@ export function LoginForm({
               {error && (
                 <p className="text-red-500 text-sm text-center">{error}</p>
               )}
+
+              <div className="text-center text-sm">
+                Don&apos;t have an account?{" "}
+                <a href="#" className="underline underline-offset-4">
+                  Sign up
+                </a>
+              </div>
             </div>
           </form>
           <div className="bg-muted relative hidden md:block">
             <Image
-              src="/placeholder.svg"
+              src="https://ui.shadcn.com/placeholder.svg"
               width={100}
               height={100}
               alt="Image"

@@ -94,22 +94,18 @@ def list_projects(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user),
 ):
-    query = db.query(Project)
+    query = (
+        db.query(Project)
+        .join(ProjectMember)
+        .filter(ProjectMember.user_id == current_user.id)
+        .options(joinedload(Project.owner))
+    )
 
     # Role filtering
-    if manager_only and member_only:
-        query = query.join(ProjectMember).filter(
-            ProjectMember.user_id == current_user.id,
-            ProjectMember.role.in_(["manager", "member"]),
-        )
-    elif manager_only:
-        query = query.join(ProjectMember).filter(
-            ProjectMember.user_id == current_user.id, ProjectMember.role == "manager"
-        )
+    if manager_only:
+        query = query.filter(ProjectMember.role == "manager")
     elif member_only:
-        query = query.join(ProjectMember).filter(
-            ProjectMember.user_id == current_user.id, ProjectMember.role == "member"
-        )
+        query = query.filter(ProjectMember.role == "member")
 
     # Favourite filter
     if favourite:
@@ -129,7 +125,7 @@ def list_projects(
 
     # Tags filter
     if tags:
-        query = query.join(Project.tags).filter(Tag.name.in_(tags)).distinct()
+        query = query.outerjoin(Project.tags).filter(Tag.name.in_(tags)).distinct()
 
     # Pagination
     projects = query.offset(skip).limit(limit).all()

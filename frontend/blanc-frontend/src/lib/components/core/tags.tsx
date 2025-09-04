@@ -1,5 +1,5 @@
 "use client";
-import { useState, KeyboardEvent, FocusEvent } from "react";
+import { useState, useEffect, KeyboardEvent, FocusEvent } from "react";
 import {
   Command,
   CommandEmpty,
@@ -9,23 +9,38 @@ import {
   CommandList,
 } from "@/lib/components/ui/command";
 
-type Tag = {
+export type Tag = {
   id?: number;
   name: string;
+  color?: string; // include color
 };
 
 type TagsInputProps = {
-  availableTags: Tag[]; // from DB
-  onChange: (tags: Tag[]) => void;
+  availableTags: Tag[]; // all tags from /tags/
+  initialTags?: Tag[]; // pre-assigned project tags
+  onChange: (tags: Tag[]) => void; // notify parent of current selection
 };
 
-export default function TagsInput({ availableTags, onChange }: TagsInputProps) {
+export default function TagsInput({
+  availableTags,
+  initialTags = [],
+  onChange,
+}: TagsInputProps) {
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
+  // load initial project tags
+  useEffect(() => {
+    if (initialTags.length) {
+      setSelectedTags(initialTags);
+    }
+  }, [initialTags]);
+
   const addTag = (tag: Tag) => {
-    if (!selectedTags.find((t) => t.name.toLowerCase() === tag.name.toLowerCase())) {
+    if (
+      !selectedTags.find((t) => t.name.toLowerCase() === tag.name.toLowerCase())
+    ) {
       const updated = [...selectedTags, tag];
       setSelectedTags(updated);
       onChange(updated);
@@ -49,7 +64,8 @@ export default function TagsInput({ availableTags, onChange }: TagsInputProps) {
       if (existing) {
         addTag(existing);
       } else {
-        addTag({ name: inputValue }); // new tag
+        // "new" tag (no id yet) → backend will create on save
+        addTag({ name: inputValue, color: "#F5B027" });
       }
     }
   };
@@ -62,7 +78,6 @@ export default function TagsInput({ availableTags, onChange }: TagsInputProps) {
 
   const handleFocus = () => setIsOpen(true);
   const handleBlur = (e: FocusEvent<HTMLDivElement>) => {
-    // Close only if focus left the entire container
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsOpen(false);
     }
@@ -70,60 +85,63 @@ export default function TagsInput({ availableTags, onChange }: TagsInputProps) {
 
   return (
     <div className="w-[60%] relative" onBlur={handleBlur}>
-  <div className="border-b-0 border-gray-300 p-2 focus-within:border-teal-700">
-    <div className="flex flex-wrap gap-2">
-      {selectedTags.map((tag) => (
-        <span
-          key={tag.id ?? tag.name}
-          className="bg-teal-100 text-teal-800 px-2 py-1 rounded-full text-xs flex items-center gap-1"
-        >
-          {tag.name}
-          <button
-            type="button"
-            className="text-teal-600 hover:text-red-500"
-            onClick={() => removeTag(tag.name)}
-          >
-            ×
-          </button>
-        </span>
-      ))}
-    </div>
+      <div className="border-b-0 border-gray-300 p-2 focus-within:border-teal-700">
+        <div className="flex flex-wrap gap-2">
+          {selectedTags.map((tag) => (
+            <span
+              key={tag.id ?? tag.name}
+              className="px-2 py-1 rounded-full text-white text-xs flex items-center gap-1"
+              style={{
+                backgroundColor: tag.color ?? "#5F18DB",
+                color: "#FFFFFF",
+              }}
+            >
+              {tag.name}
+              <button
+                type="button"
+                className="ml-1 text-gray-600 hover:text-red-500"
+                onClick={() => removeTag(tag.name)}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
 
-    {/* Input always goes to new line under tags */}
-    <Command className="mt-2 border-none shadow-none w-full ">
-      <CommandInput
-        placeholder="Add tags..."
-        value={inputValue}
-        onValueChange={setInputValue}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-      />
-    </Command>
-  </div>
+        {/* Input always goes to new line under tags */}
+        <Command className="mt-2 border-none shadow-none w-full ">
+          <CommandInput
+            placeholder="Add tags..."
+            value={inputValue}
+            onValueChange={setInputValue}
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+          />
+        </Command>
+      </div>
 
-  {/* Floating dropdown */}
-  {isOpen && (inputValue || filteredTags.length > 0) && (
-    <div className="absolute left-0 mt-1 w-full z-50 border rounded-md shadow-md bg-white">
-      <Command>
-        <CommandList>
-          {inputValue && (
-            <CommandEmpty>
-              Press <kbd>Enter</kbd> to create &quot;{inputValue}&quot;
-            </CommandEmpty>
-          )}
-          {filteredTags.length > 0 && (
-            <CommandGroup heading="Suggestions">
-              {filteredTags.map((tag) => (
-                <CommandItem key={tag.id} onSelect={() => addTag(tag)}>
-                  {tag.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-        </CommandList>
-      </Command>
+      {isOpen && (inputValue || filteredTags.length > 0) && (
+        <div className="absolute left-0 mt-1 w-full z-50 border rounded-md shadow-md bg-white">
+          <Command>
+            <CommandList>
+              {inputValue && (
+                <CommandEmpty>
+                  Press <kbd>Enter</kbd> to create &quot;{inputValue}&quot;
+                </CommandEmpty>
+              )}
+              {filteredTags.length > 0 && (
+                <CommandGroup heading="Suggestions">
+                  {filteredTags.map((tag) => (
+                    <CommandItem key={tag.id} onSelect={() => addTag(tag)}>
+                      {tag.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </div>
+      )}
     </div>
-  )}
-</div>
   );
 }

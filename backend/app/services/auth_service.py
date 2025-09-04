@@ -23,26 +23,6 @@ def authenticate_user(username: str, password: str, db):
     return user
 
 
-# async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
-#     try:
-#         payload = jwt.decode(
-#             token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-#         )
-#         username: str = payload.get("sub")
-#         user_id: int = payload.id
-#         user_role: str = payload.get("role")
-#         if username is None or user_id is None:
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Could not validate user",
-#             )
-#         return {"username": username, "id": user_id, "user_role": user_role}
-#     except JWTError:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user."
-#         )
-
-
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     try:
         payload = jwt.decode(

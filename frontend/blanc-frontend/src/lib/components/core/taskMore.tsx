@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   Copy,
   LineChart,
@@ -27,34 +26,58 @@ import {
   SidebarMenuItem,
 } from "@/lib/components/ui/sidebar";
 
-type MoreButtonProps = {
-  projectId: number;
-};
+const data = [
+  [
+    {
+      label: "Edit",
+      icon: Settings2,
+    },
+  ],
+  [
+    {
+      label: "Archive",
+      icon: Folder,
+    },
+    {
+      label: "Duplicate",
+      icon: Copy,
+    },
+    {
+      label: "Move to Trash",
+      icon: Trash2,
+    },
+  ],
+  [
+    {
+      label: "View analytics",
+      icon: LineChart,
+    },
+  ],
+  //   [
+  //     // {
+  //     //   label: "Import",
+  //     //   icon: ArrowUp,
+  //     // },
+  //     // {
+  //     //   label: "Export",
+  //     //   icon: ArrowDown,
+  //     // },
+  //   ],
+];
+interface MoreButtonProps {
+  isDragging?: boolean;
+}
 
-export function MoreButton({ projectId }: MoreButtonProps) {
+export function TaskMoreButton({ isDragging }: MoreButtonProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const router = useRouter();
 
-  const handleAction = (label: string) => {
-    if (label === "Edit") {
-      router.push(`/project/${projectId}`);
-    }
-    // add other handlers here later (Archive, Duplicate, Trash, etc.)
-    setIsOpen(false);
-  };
-
-  const data = [
-    [{ label: "Edit", icon: Settings2 }],
-    [
-      { label: "Archive", icon: Folder },
-      { label: "Duplicate", icon: Copy },
-      { label: "Move to Trash", icon: Trash2 },
-    ],
-    [{ label: "View analytics", icon: LineChart }],
-  ];
+  // Prevent opening if dragging
+  React.useEffect(() => {
+    if (isDragging) setIsOpen(false);
+  }, [isDragging]);
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isDragging ? false : isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -70,17 +93,14 @@ export function MoreButton({ projectId }: MoreButtonProps) {
       >
         <Sidebar collapsible="none" className="bg-transparent">
           <SidebarContent>
-            {data.map((group, i) => (
-              <SidebarGroup key={i} className="border-b last:border-none">
+            {data.map((group, index) => (
+              <SidebarGroup key={index} className="border-b last:border-none">
                 <SidebarGroupContent className="gap-0">
                   <SidebarMenu>
-                    {group.map((item, j) => (
-                      <SidebarMenuItem key={j}>
-                        <SidebarMenuButton
-                          onClick={() => handleAction(item.label)}
-                        >
-                          <item.icon />
-                          <span>{item.label}</span>
+                    {group.map((item, index) => (
+                      <SidebarMenuItem key={index}>
+                        <SidebarMenuButton>
+                          <item.icon /> <span>{item.label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}
