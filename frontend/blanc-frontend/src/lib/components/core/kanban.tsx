@@ -16,22 +16,32 @@ import {
   horizontalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import {
-  Stage,
-  Task,
-  stages as initialStages,
-  tasks as initialTasks,
-} from "../../data/data";
+import { Task, tasks as initialTasks } from "../../data/data";
+import { useQueryClient } from "@tanstack/react-query";
 import StageColumn from "@/lib/components/core/stageColumn";
 import TaskCard from "@/lib/components/core/taskCard";
 import { Badge, GripVertical, MoreVerticalIcon } from "lucide-react";
 
-export default function Kanban() {
-  const [stages, setStages] = useState<Stage[]>(
-    [...initialStages].sort((a, b) => a.sequence - b.sequence)
-  );
+import { useStages } from "@/lib/routes/stages";
+
+interface Props {
+  projectId: number; // ⬅️ make projectId dynamic via props
+}
+
+export interface Stage {
+  id: number;
+  name: string;
+  sequence: number;
+  projectId: number;
+}
+
+export default function Kanban({ projectId }: Props) {
+  const { stagesQuery, updateStage } = useStages(projectId);
+  const stages: Stage[] = stagesQuery.data ?? [];
+  const queryClient = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([...initialTasks]);
-  const [activeId, setActiveId] = useState<string | null>(null); // Track dragged item
+  const [activeId, setActiveId] = useState<number | null>(null);
+  const [activeType, setActiveType] = useState<"task" | "stage" | null>(null); // Added to distinguish type
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -42,58 +52,79 @@ export default function Kanban() {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id.toString()); // Ensure string
+    const idStr = String(event.active.id);
+    if (idStr.startsWith("task-")) {
+      setActiveId(Number(idStr.replace("task-", "")));
+      setActiveType("task");
+    } else if (idStr.startsWith("stage-")) {
+      setActiveId(Number(idStr.replace("stage-", "")));
+      setActiveType("stage");
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null); // Clear active drag
+    setActiveId(null);
+    setActiveType(null);
 
     if (!over) return;
 
     // Handle dragging stages
     if (active.data.current?.type === "stage") {
-      const oldIndex = stages.findIndex((s) => s.id === active.id);
-      const newIndex = stages.findIndex((s) => s.id === over.id);
-      const newStages = arrayMove(stages, oldIndex, newIndex).map((s, i) => ({
-        ...s,
-        sequence: i + 1,
-      }));
-      setStages(newStages);
+      const activeStageId = Number(String(active.id).replace("stage-", ""));
+      const overStageId = Number(String(over.id).replace("stage-", ""));
+
+      const oldIndex = stages.findIndex((s) => s.id === activeStageId);
+      const newIndex = stages.findIndex((s) => s.id === overStageId);
+
+      if (oldIndex !== newIndex) {
+        const newStages: Stage[] = arrayMove(stages, oldIndex, newIndex).map(
+          (s, i) => ({ ...s, sequence: i + 1 })
+        );
+
+        // ✅ Optimistic update
+        queryClient.setQueryData(["stages", projectId], newStages);
+
+        // ✅ Persist
+        newStages.forEach((s) =>
+          updateStage.mutate({ id: s.id, sequence: s.sequence })
+        );
+      }
       return;
     }
 
     // Handle dragging tasks
     if (active.data.current?.type === "task") {
-      const activeId = active.id;
-      const overId = over.id;
-      const activeTask = tasks.find((t) => t.id === activeId);
+      const activeTaskId = Number(String(active.id).replace("task-", ""));
+      const activeTask = tasks.find((t) => t.id === activeTaskId);
       if (!activeTask) return;
 
       const activeStageId = activeTask.stageId;
       let newStageId = activeStageId;
       let isOverStage = false;
+      let overTaskId: number | null = null;
 
       if (over.data.current?.type === "task") {
+        overTaskId = Number(String(over.id).replace("task-", ""));
         newStageId = over.data.current.stageId;
       } else if (over.data.current?.type === "stage") {
-        newStageId = over.data.current.stageId;
+        newStageId = over.data.current.stageId; // Assumes data.stageId set in StageColumn
         isOverStage = true;
       } else {
         return;
       }
 
-      if (activeId === overId && activeStageId === newStageId) return;
+      if (activeTaskId === overTaskId && activeStageId === newStageId) return;
 
       // Compute tasksByStage based on current order
-      const tasksByStage: Record<string, Task[]> = {};
+      const tasksByStage: Record<number, Task[]> = {};
       stages.forEach((stage) => {
         tasksByStage[stage.id] = tasks.filter((t) => t.stageId === stage.id);
       });
 
       // Remove active task from original stage
       tasksByStage[activeStageId] = tasksByStage[activeStageId].filter(
-        (t) => t.id !== activeId
+        (t) => t.id !== activeTaskId
       );
 
       // Create updated task
@@ -105,7 +136,7 @@ export default function Kanban() {
         newIndex = tasksByStage[newStageId].length;
       } else {
         const overIndex = tasksByStage[newStageId].findIndex(
-          (t) => t.id === overId
+          (t) => t.id === overTaskId
         );
         const isBelow = event.delta.y > 0;
         newIndex = overIndex + (isBelow ? 1 : 0);
@@ -125,8 +156,14 @@ export default function Kanban() {
   };
 
   // Find the dragged item for DragOverlay
-  const activeStage = activeId ? stages.find((s) => s.id === activeId) : null;
-  const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
+  const activeStage =
+    activeType === "stage" && activeId !== null
+      ? stages.find((s) => s.id === activeId)
+      : null;
+  const activeTask =
+    activeType === "task" && activeId !== null
+      ? tasks.find((t) => t.id === activeId)
+      : null;
 
   return (
     <DndContext
@@ -137,7 +174,7 @@ export default function Kanban() {
     >
       <div className="flex gap-6 w-full h-full p-4 bg-[#f5f6f8] overflow-x-auto">
         <SortableContext
-          items={stages.map((s) => s.id)}
+          items={stages.map((s) => `stage-${s.id}`)}
           strategy={horizontalListSortingStrategy}
         >
           {stages.map((stage) => (

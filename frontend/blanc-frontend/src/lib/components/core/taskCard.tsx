@@ -10,7 +10,7 @@ import { TaskMoreButton } from "./taskMore";
 
 interface Props {
   task: Task;
-  stageId: string;
+  stageId: number;
   style?: React.CSSProperties;
   isDragging?: boolean;
 }
@@ -18,7 +18,7 @@ interface Props {
 export default function TaskCard({ task, stageId, style, isDragging }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
-      id: task.id,
+      id: `task-${task.id}`, // Added prefix
       data: { type: "task", stageId },
     });
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Open_Sans } from "next/font/google";
 import "./globals.css";
-
+import Providers from "@/lib/components/core/providers";
 
 const notoSans = Noto_Sans({
   subsets: ["latin"],
@@ -15,8 +15,6 @@ const openSans = Open_Sans({
   variable: "--font-open_sans",
 });
 
-
-
 export const metadata: Metadata = {
   title: "Blanc",
   description: "Organize, Plan, Never leave another task undone.",
@@ -29,10 +27,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${notoSans.variable} ${openSans.variable} antialiased`}
-      >
-        {children}
+      <body className={`${notoSans.variable} ${openSans.variable} antialiased`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -23,7 +23,7 @@ import {
   updateProject,
   fetchProjectTags,
 } from "@/lib/routes/project";
-import { fetchTags, createTag, assignTag, unassignTag } from "@/lib/routes/tag"; // 🟢 tag routes
+import { fetchTags, createTag, assignTag, unassignTag } from "@/lib/routes/tag";
 import InviteMembers from "@/lib/components/core/inviteMembers";
 
 export default function ProjectId() {
@@ -34,14 +34,13 @@ export default function ProjectId() {
   const [originalData, setOriginalData] = useState<any | null>(null);
   const [availableTags, setAvailableTags] = useState<
     { id?: number; name: string }[]
-  >([]); // 🟢
+  >([]);
 
   // fetch project by ID + tags
   useEffect(() => {
     async function loadProject() {
       const project = await fetchProjectById(projectId);
 
-      // 🟢 fetch all tags + assigned tags
       const [allTags, projectTags] = await Promise.all([
         fetchTags(),
         fetchProjectTags(projectId),
@@ -77,7 +76,7 @@ export default function ProjectId() {
       end_date: formData.end_date,
     });
 
-    // 2. process tags 🟢
+    // 2. process tags
     const currentTags = formData.tags || [];
     const originalTags = originalData?.tags || [];
 
@@ -180,7 +179,7 @@ export default function ProjectId() {
                     </label>
                     <TagsInput
                       availableTags={availableTags}
-                      initialTags={formData.tags || []} // 🟢
+                      initialTags={formData.tags || []}
                       onChange={(tags) => handleChange("tags", tags)}
                     />
                   </div>

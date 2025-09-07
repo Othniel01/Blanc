@@ -21,8 +21,8 @@ export default function StageColumn({ stage, tasks }: Props) {
     transition,
     isDragging,
   } = useSortable({
-    id: stage.id,
-    data: { type: "stage" },
+    id: `stage-${stage.id}`,
+    data: { type: "stage", stageId: stage.id },
   });
 
   const { setNodeRef: dropRef } = useDroppable({
