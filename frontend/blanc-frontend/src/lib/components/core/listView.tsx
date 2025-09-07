@@ -111,8 +111,8 @@ export function ListView({ columns, data }: ListViewProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {[
-                "in_progress",
-                "changes_requested",
+                "in progress",
+                "changes requested",
                 "approved",
                 "cancelled",
                 "done",

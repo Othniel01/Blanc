@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from app.services.notification_service import NotificationService
 
 from ....db.session import get_db
-from ....models.project import Project, ProjectMember, Tag
+from ....models.project import Project, ProjectMember, Stage, Tag
 from ....models.users import Users
 from ....models.tasks import Task
 from ....models.message import Message
@@ -36,6 +36,7 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user),
 ):
+    # Create project
     new_project = Project(
         name=project.name,
         description=project.description,
@@ -50,11 +51,31 @@ def create_project(
     db.commit()
     db.refresh(new_project)
 
+    # Add current user as manager
     project_manager = ProjectMember(
         project_id=new_project.id, user_id=current_user.id, role="manager"
     )
     db.add(project_manager)
+
+    # ✅ Create default stages
+    default_stages = [
+        {"name": "To Do", "sequence": 1},
+        {"name": "In Progress", "sequence": 2},
+        {"name": "In Review", "sequence": 3},
+        {"name": "Done", "sequence": 4},
+    ]
+
+    for stage_data in default_stages:
+        stage = Stage(
+            name=stage_data["name"],
+            sequence=stage_data["sequence"],
+            project_id=new_project.id,
+        )
+        db.add(stage)
+
     db.commit()
+    db.refresh(new_project)
+
     return new_project
 
 

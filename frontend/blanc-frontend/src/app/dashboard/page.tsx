@@ -19,6 +19,7 @@ import {
   fetchMe,
 } from "@/lib/routes/project";
 import ProtectedRoute from "@/lib/components/portected-route";
+import Link from "next/link";
 
 export default function Page() {
   const [view, setView] = useState<"card" | "list">("card");
@@ -106,8 +107,9 @@ export default function Page() {
             grid-cols-[repeat(auto-fit,minmax(320px,1fr))] auto-rows-min"
           >
             {projects.map((project) => (
-              <div
+              <Link
                 key={project.id}
+                href={`/project/${project.id}/tasks`}
                 className="bg-white cursor-pointer rounded-[10px] relative w-[360px] p-4 h-[130px]"
               >
                 <div className="flex-col flex">
@@ -146,7 +148,14 @@ export default function Page() {
                   <div className="w-full h-[40px]" />
                 </div>
                 <div className="absolute right-4 top-4">
-                  <MoreButton projectId={project.id} />
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation(); // stop bubbling
+                      e.preventDefault(); // stop link navigation
+                    }}
+                  >
+                    <MoreButton projectId={project.id} />
+                  </div>
                 </div>
                 <div className="absolute pr-8 bottom-2 w-full">
                   <div className="flex items-center justify-between">
@@ -166,7 +175,7 @@ export default function Page() {
                     </Avatar>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

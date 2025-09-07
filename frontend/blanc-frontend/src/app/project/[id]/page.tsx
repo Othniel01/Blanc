@@ -82,15 +82,29 @@ export default function ProjectId() {
     const originalTags = originalData?.tags || [];
 
     const newTags = currentTags.filter((t: any) => !t.id);
+
+    // 2. existing tags newly added (in current but not in original)
+    const addedExistingTags = currentTags.filter(
+      (t: any) => t.id && !originalTags.some((ot: any) => ot.id === t.id)
+    );
+
+    // 3. removed tags
     const removedTags = originalTags.filter(
       (t: any) => !currentTags.some((ct: any) => ct.id === t.id)
     );
 
+    // Create + assign brand new tags
     for (const tag of newTags) {
       const created = await createTag(tag.name, "#F5B027");
       await assignTag(projectId, created.id);
     }
 
+    // Assign existing tags that were newly selected
+    for (const tag of addedExistingTags) {
+      await assignTag(projectId, tag.id);
+    }
+
+    // Unassign removed tags
     for (const tag of removedTags) {
       if (tag.id) await unassignTag(projectId, tag.id);
     }

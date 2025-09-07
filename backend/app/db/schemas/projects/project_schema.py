@@ -12,7 +12,7 @@ class ProjectBase(BaseModel):
     allow_milestones: bool = False
     is_favourite: Optional[bool] = False
     allow_timesheets: bool = False
-    status: str = "draft"
+    status: str = "in progress"
     active: bool = True
 
 

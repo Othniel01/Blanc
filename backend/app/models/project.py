@@ -26,8 +26,8 @@ project_tags = Table(
 
 
 class ProjectStatusEnum(str, enum.Enum):
-    in_progress = "in_progress"
-    changes_requested = "changes_requested"
+    in_progress = "in progress"
+    changes_requested = "changes requested"
     approved = "approved"
     cancelled = "cancelled"
     done = "done"
