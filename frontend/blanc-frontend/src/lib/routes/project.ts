@@ -1,27 +1,21 @@
 import endpoint from "./init";
 import { authFetch } from "./http";
 
-// generic fetch with auth
-
-// get all projects
 export async function fetchProjects() {
   return authFetch(`${endpoint}/projects/projects`);
 }
 
-// get single project
 export async function fetchProjectById(projectId: number) {
   return authFetch(`${endpoint}/projects/${projectId}`);
 }
 
-// update project
 export async function updateProject(projectId: number, payload: unknown) {
   return authFetch(`${endpoint}/projects/${projectId}`, {
-    method: "PUT", // or PATCH depending on your backend
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
-// get project tags safely
 export async function fetchProjectTags(projectId: number) {
   try {
     return (await authFetch(`${endpoint}/projects/${projectId}/tags`)) ?? [];
@@ -31,7 +25,6 @@ export async function fetchProjectTags(projectId: number) {
   }
 }
 
-// get project tasks safely
 export async function fetchProjectTasks(projectId: number) {
   try {
     return (await authFetch(`${endpoint}/projects/${projectId}/tasks`)) ?? [];
@@ -40,7 +33,7 @@ export async function fetchProjectTasks(projectId: number) {
     return [];
   }
 }
-// get current user
+
 export async function fetchMe() {
   return authFetch(`${endpoint}/users/me`);
 }

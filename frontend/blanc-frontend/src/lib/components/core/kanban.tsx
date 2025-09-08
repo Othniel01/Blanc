@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import {
   DndContext,
-  closestCorners, // Changed for better performance
+  closestCorners,
   DragEndEvent,
   DragOverlay,
   PointerSensor,
@@ -17,7 +17,7 @@ import {
   horizontalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { Task, tasks as initialTasks } from "../../data/data";
+import { Task } from "../../data/data";
 import { useQueryClient } from "@tanstack/react-query";
 import StageColumn from "@/lib/components/core/stageColumn";
 import TaskCard from "@/lib/components/core/taskCard";
@@ -95,7 +95,6 @@ export default function Kanban({ projectId }: Props) {
 
       if (newstage_id === null || activeTask.stage_id === newstage_id) return;
 
-      // Update tasks state to move task to new stage
       setTasks((prevTasks) =>
         prevTasks.map((t) =>
           t.id === activeTaskId ? { ...t, stage_id: newstage_id! } : t
@@ -105,7 +104,6 @@ export default function Kanban({ projectId }: Props) {
     [tasks]
   );
 
-  // Memoize tasksByStage for render and drag operations
   const tasksByStage = useMemo(() => {
     const result: Record<number, Task[]> = {};
     stages.forEach((stage) => {
@@ -122,7 +120,6 @@ export default function Kanban({ projectId }: Props) {
 
       if (!over) return;
 
-      // Handle dragging stages
       if (active.data.current?.type === "stage") {
         const activestage_id = Number(String(active.id).replace("stage-", ""));
         const overstage_id = Number(String(over.id).replace("stage-", ""));
@@ -135,10 +132,8 @@ export default function Kanban({ projectId }: Props) {
             (s, i) => ({ ...s, sequence: i + 1 })
           );
 
-          // Optimistic update
           queryClient.setQueryData(["stages", projectId], newStages);
 
-          // Batch mutations
           newStages.forEach((s) =>
             updateStage.mutate({ id: s.id, sequence: s.sequence })
           );
@@ -146,7 +141,6 @@ export default function Kanban({ projectId }: Props) {
         return;
       }
 
-      // Handle dragging tasks
       if (active.data.current?.type === "task") {
         const activeTaskId = Number(String(active.id).replace("task-", ""));
         const activeTask = tasks.find((t) => t.id === activeTaskId);
@@ -170,13 +164,10 @@ export default function Kanban({ projectId }: Props) {
         if (activeTaskId === overTaskId && activestage_id === newstage_id)
           return;
 
-        // Update tasks array incrementally
         setTasks((prevTasks) => {
-          // Remove task from current position
           const updatedTasks = prevTasks.filter((t) => t.id !== activeTaskId);
           const newTask = { ...activeTask, stage_id: newstage_id };
 
-          // Find insertion index in new stage
           const tasksInStage = tasksByStage[newstage_id] || [];
 
           const newIndex = isOverStage
@@ -184,28 +175,23 @@ export default function Kanban({ projectId }: Props) {
             : tasksInStage.findIndex((t) => t.id === overTaskId) +
               (event.delta.y > 0 ? 1 : 0);
 
-          // Find global index to insert
           let globalIndex = 0;
           for (const stage of stages) {
             if (stage.id === newstage_id) {
               globalIndex += newIndex;
               break;
             }
-            globalIndex += tasksByStage[stage.id]?.length || 0; // fallback here too
+            globalIndex += tasksByStage[stage.id]?.length || 0;
           }
 
-          // Insert task at global index
           return [
             ...updatedTasks.slice(0, globalIndex),
             newTask,
             ...updatedTasks.slice(globalIndex),
           ];
         });
-
-        updateTaskStage({ taskId: activeTaskId, stage_id: newstage_id });
-
         // TODO: Implement useTasks hook with updateTask
-        // updateTask.mutate({ id: activeTaskId, stage_id: newstage_id });
+        updateTaskStage({ taskId: activeTaskId, stage_id: newstage_id });
       }
     },
     [
@@ -219,7 +205,6 @@ export default function Kanban({ projectId }: Props) {
     ]
   );
 
-  // Memoize active items for DragOverlay
   const activeStage = useMemo(
     () =>
       activeType === "stage" && activeId !== null
@@ -239,7 +224,7 @@ export default function Kanban({ projectId }: Props) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners} // Changed for performance
+      collisionDetection={closestCorners} // performance boost
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -253,7 +238,7 @@ export default function Kanban({ projectId }: Props) {
             <StageColumn
               key={stage.id}
               stage={stage}
-              tasks={tasksByStage[stage.id] || []} // Use memoized tasks
+              tasks={tasksByStage[stage.id] || []}
             />
           ))}
         </SortableContext>
@@ -282,7 +267,6 @@ export default function Kanban({ projectId }: Props) {
                 <MoreVerticalIcon className="w-4 h-4" />
               </div>
             </div>
-            {/* Render minimal task list to reduce overhead */}
             <div className="bg-gray-200 p-2 rounded-sm min-h-[50px]" />
           </div>
         )}

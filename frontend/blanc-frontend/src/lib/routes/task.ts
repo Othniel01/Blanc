@@ -34,33 +34,29 @@ export async function updateTask(
   });
 }
 
-// fetch tasks with assignees and batch message count
 export async function fetchTasksWithDetails(
   projectId: number
 ): Promise<Task[]> {
-  // fetch tasks and project members
   const tasks = (await fetchProjectTasks(projectId)) as any[];
   const members = await getProjectMembers(projectId);
 
-  // batch fetch message counts
   const taskIds = tasks.map((t) => t.id);
   let messageCounts: Record<number, number> = {};
   try {
     const counts = await authFetch(
       `${endpoint}/tasks/message-counts?task_ids=${taskIds.join(",")}`
     );
-    messageCounts = counts; // backend returns { [taskId]: count }
+    messageCounts = counts;
   } catch (e) {
     console.warn("Failed to fetch message counts", e);
   }
 
-  // Fetch tags for all tasks
   const tagsByTask: Record<number, string[]> = {};
   await Promise.all(
     taskIds.map(async (taskId) => {
       try {
         const tags = await authFetch(`${endpoint}/tasks/${taskId}/tags`);
-        tagsByTask[taskId] = tags.slice(0, 3); // max 3
+        tagsByTask[taskId] = tags.slice(0, 3);
       } catch {
         tagsByTask[taskId] = [];
       }
@@ -68,14 +64,12 @@ export async function fetchTasksWithDetails(
   );
 
   return tasks.map((task) => {
-    // truncate description to 12 words
     const words = task.description?.split(" ") || [];
     const truncatedDescription =
       words.length > 12
         ? words.slice(0, 12).join(" ") + "..."
         : task.description;
 
-    // map assignees to include avatar
     const assignees = (task.assignees || [])
       .map((id: number) => {
         const member = members.find((m: any) => m.id === id);
