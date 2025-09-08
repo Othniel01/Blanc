@@ -3,17 +3,15 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-# ---------- Shared Base ----------
 class TaskBase(BaseModel):
     name: str
     description: Optional[str] = None
     due_date: Optional[datetime] = None
-    status: Optional[str] = "todo"  # todo, in_progress, done
-    active: bool = True  # archive toggle
+    status: Optional[str] = "in progress"
+    active: bool = True
     priority: int = Field(3, ge=1, le=5)
 
 
-# ---------- Create Schema ----------
 class TaskCreate(TaskBase):
     project_id: int  # must belong to a project
     stage_id: Optional[int] = None
@@ -21,7 +19,6 @@ class TaskCreate(TaskBase):
     milestone_id: Optional[int] = None
 
 
-# ---------- Update Schema ----------
 class TaskUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -34,7 +31,6 @@ class TaskUpdate(BaseModel):
     priority: int | None = Field(None, ge=1, le=5)
 
 
-# ---------- Response Schema ----------
 class TaskOut(TaskBase):
     id: int
     project_id: int
@@ -68,7 +64,6 @@ class TaskOut(TaskBase):
         )
 
 
-# ---------- With Relations ----------
 class TaskWithRelations(TaskOut):
     tags: List["TagOut"] = []
     project: Optional["ProjectOut"] = None
@@ -77,13 +72,10 @@ class TaskWithRelations(TaskOut):
     assignee_ids: Optional[List[int]] = []
 
 
-# avoid circular imports
 from .tag_schema import TagOut
 from .project_schema import ProjectOut
 from .stage_schema import StageOut
 from .milestone_schema import MilestoneOut
-
-# from .user_schema import UserOut
 
 
 TaskWithRelations.model_rebuild()

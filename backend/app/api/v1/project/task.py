@@ -1,16 +1,17 @@
 # app/api/routes/task.py
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, func
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from app.db.schemas.chat.message_schema import MessageOut
+from app.db.schemas.projects.sub_task import SubTaskCreate, SubTaskOut, SubTaskUpdate
 from app.db.schemas.projects.tag_schema import TagOut
 from app.db.schemas.user_profile_schema import UserProfileResponse
 from app.services.notification_service import NotificationService
 from ....db.session import get_db
-from ....models.tasks import Task, TaskStatusEnum
+from ....models.tasks import SubTask, Task, TaskStatusEnum
 from ....db.schemas.projects.task_schema import TaskCreate, TaskUpdate, TaskOut
 from ....models.users import Users
 from ....services.auth_service import get_current_user
@@ -268,6 +269,31 @@ def bulk_archive_tasks(
         "unauthorized": unauthorized,
         "not_found": not_found,
     }
+
+
+@router.get("/message-counts", response_model=Dict[int, int])
+def message_counts(
+    task_ids: List[int] = Query(...),
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+):
+    """
+    Returns a dict of {task_id: message_count} for the given list of task_ids
+    """
+    # Query messages grouped by object_id where object_type is "task"
+    counts = (
+        db.query(Message.object_id, func.count(Message.id))
+        .filter(Message.object_type == "task", Message.object_id.in_(task_ids))
+        .group_by(Message.object_id)
+        .all()
+    )
+
+    # Convert to dict and ensure all task_ids are present
+    counts_dict = {tid: 0 for tid in task_ids}  # default 0
+    for object_id, count in counts:
+        counts_dict[object_id] = count
+
+    return counts_dict
 
 
 # Bulk Duplicate
@@ -565,78 +591,108 @@ def delete_task(
 
 
 # -----------------------------
-# Create a subtask
+# Create Subtask
 # -----------------------------
+
+
 @router.post(
-    "/{task_id}/subtasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED
+    "/{task_id}/subtasks",
+    response_model=SubTaskOut,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_subtask(
     task_id: int,
-    subtask: TaskCreate,
+    subtask: SubTaskCreate,
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user),
 ):
-    parent_task = db.query(Task).filter(Task.id == task_id).first()
-    if not parent_task:
-        raise HTTPException(status_code=404, detail="Parent task not found")
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
 
-    db_assignees = []
-    if subtask.assignee_ids:
-        db_assignees = db.query(Users).filter(Users.id.in_(subtask.assignee_ids)).all()
+    require_project_membership(db, task.project_id, current_user.id)
 
-    new_subtask = Task(
-        name=subtask.name,
-        description=subtask.description,
-        project_id=parent_task.project_id,
-        milestone_id=subtask.milestone_id,
-        stage_id=subtask.stage_id,
-        priority=subtask.priority,
-        due_date=subtask.due_date,
-        assignees=db_assignees,
-        creator_id=current_user.id,
-        parent_task_id=parent_task.id,
+    new_subtask = SubTask(
+        title=subtask.title,
+        is_done=subtask.is_done,
+        task_id=task.id,
+        owner_id=current_user.id,
     )
-
-    project = require_project_membership(db, parent_task.project_id, current_user.id)
-
-    membership = (
-        db.query(ProjectMember)
-        .filter(
-            ProjectMember.project_id == project.id,
-            ProjectMember.user_id == current_user.id,
-        )
-        .first()
-    )
-    if parent_task.creator_id != current_user.id and (
-        not membership or membership.role != "manager"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Not authorized to create this task"
-        )
 
     db.add(new_subtask)
     db.commit()
     db.refresh(new_subtask)
 
-    return TaskOut.from_orm_with_assignees(new_subtask)
+    return new_subtask
 
 
-# -----------------------------
-# Get subtasks
-# -----------------------------
-@router.get("/{task_id}/subtasks", response_model=List[TaskOut])
+@router.get("/{task_id}/subtasks", response_model=List[SubTaskOut])
 def get_subtasks(
     task_id: int,
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user),
 ):
-    parent_task = db.query(Task).filter(Task.id == task_id).first()
-    if not parent_task:
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    require_project_membership(db, parent_task.project_id, current_user.id)
+    require_project_membership(db, task.project_id, current_user.id)
 
-    return db.query(Task).filter(Task.parent_task_id == task_id).all()
+    return db.query(SubTask).filter(SubTask.task_id == task_id).all()
+
+
+@router.put("/{task_id}/subtasks/{subtask_id}", response_model=SubTaskOut)
+def update_subtask(
+    task_id: int,
+    subtask_id: int,
+    subtask_update: SubTaskUpdate,
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+):
+    subtask = (
+        db.query(SubTask)
+        .filter(SubTask.id == subtask_id, SubTask.task_id == task_id)
+        .first()
+    )
+    if not subtask:
+        raise HTTPException(status_code=404, detail="Subtask not found")
+
+    require_project_membership(db, subtask.task.project_id, current_user.id)
+
+    if subtask_update.title is not None:
+        subtask.title = subtask_update.title
+    if subtask_update.is_done is not None:
+        subtask.is_done = subtask_update.is_done
+
+    db.commit()
+    db.refresh(subtask)
+
+    return subtask
+
+
+@router.delete(
+    "/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_subtask(
+    task_id: int,
+    subtask_id: int,
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+):
+    subtask = (
+        db.query(SubTask)
+        .filter(SubTask.id == subtask_id, SubTask.task_id == task_id)
+        .first()
+    )
+    if not subtask:
+        raise HTTPException(status_code=404, detail="Subtask not found")
+
+    require_project_membership(db, subtask.task.project_id, current_user.id)
+
+    db.delete(subtask)
+    db.commit()
+
+    return
 
 
 # -----------------------------

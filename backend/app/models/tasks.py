@@ -36,8 +36,8 @@ task_assignees = Table(
 
 # --- Task status enum (fixed options) ---
 class TaskStatusEnum(str, enum.Enum):
-    in_progress = "in_progress"
-    changes_requested = "changes_requested"
+    in_progress = "in progress"
+    changes_requested = "changes requested"
     approved = "approved"
     cancelled = "cancelled"
     done = "done"
@@ -63,10 +63,10 @@ class Task(Base):
     )
     stage = relationship("Stage", back_populates="tasks")
 
-    parent_task_id = Column(
-        Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True
-    )
-    parent_task = relationship("Task", remote_side=[id], backref="subtasks")
+    # parent_task_id = Column(
+    #     Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True
+    # )
+    # parent_task = relationship("Task", remote_side=[id], backref="subtasks")
 
     # Core fields
     description = Column(Text, nullable=True)
@@ -105,3 +105,21 @@ class TaskAttachment(Base):
     uploader = relationship("Users", backref="uploaded_files")
 
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SubTask(Base):
+    __tablename__ = "subtasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    is_done = Column(Boolean, default=False)
+
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"))
+    task = relationship("Task", backref="subtasks")
+
+    # Audit
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))
+    owner = relationship("Users", backref="subtasks")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

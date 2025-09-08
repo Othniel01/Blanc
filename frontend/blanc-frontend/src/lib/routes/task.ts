@@ -2,6 +2,7 @@
 import { authFetch } from "./http";
 import endpoint from "./init";
 import { fetchProjectTasks, getProjectMembers } from "./project";
+import { Tag } from "./Tags";
 
 export interface Task {
   id: number;
@@ -12,6 +13,13 @@ export interface Task {
   status: string;
   stage_id: number;
   messageCount: number;
+}
+
+// -----------------------------
+// Core Task Routes
+// -----------------------------
+export async function fetchTaskById(taskId: number): Promise<Task> {
+  return authFetch(`${endpoint}/tasks/${taskId}`);
 }
 
 export async function updateTask(
@@ -34,6 +42,9 @@ export async function updateTask(
   });
 }
 
+// -----------------------------
+// Tasks with details (tags, assignees, message counts)
+// -----------------------------
 export async function fetchTasksWithDetails(
   projectId: number
 ): Promise<Task[]> {
@@ -41,6 +52,8 @@ export async function fetchTasksWithDetails(
   const members = await getProjectMembers(projectId);
 
   const taskIds = tasks.map((t) => t.id);
+
+  // batch message counts
   let messageCounts: Record<number, number> = {};
   try {
     const counts = await authFetch(
@@ -51,6 +64,7 @@ export async function fetchTasksWithDetails(
     console.warn("Failed to fetch message counts", e);
   }
 
+  // fetch tags
   const tagsByTask: Record<number, string[]> = {};
   await Promise.all(
     taskIds.map(async (taskId) => {
@@ -83,5 +97,24 @@ export async function fetchTasksWithDetails(
       assignees,
       messageCount: messageCounts[task.id] || 0,
     } as Task;
+  });
+}
+
+// -----------------------------
+// Tag Routes (Task-specific)
+// -----------------------------
+export async function fetchTaskTags(taskId: number): Promise<Tag[]> {
+  return authFetch(`${endpoint}/tasks/${taskId}/tags`);
+}
+
+export async function assignTaskTag(taskId: number, tagId: number) {
+  return authFetch(`${endpoint}/tags/task/${taskId}/assign/${tagId}`, {
+    method: "POST",
+  });
+}
+
+export async function unassignTaskTag(taskId: number, tagId: number) {
+  return authFetch(`${endpoint}/tags/task/${taskId}/unassign/${tagId}`, {
+    method: "DELETE",
   });
 }

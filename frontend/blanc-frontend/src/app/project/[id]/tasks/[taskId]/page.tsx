@@ -16,24 +16,32 @@ import {
 import { SaveIcon, SlashIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/lib/components/ui/button";
-// import { TableDemo } from "@/lib/components/core/table";
-import MessageBox from "@/lib/components/core/chat";
-import {
-  fetchProjectById,
-  updateProject,
-  fetchProjectTags,
-} from "@/lib/routes/project";
-import {
-  fetchTags,
-  createTag,
-  assignTag,
-  unassignTag,
-} from "@/lib/routes/Tags";
-import InviteMembers from "@/lib/components/core/inviteMembers";
 
-export default function ProjectId() {
+import {
+  fetchTaskById,
+  updateTask,
+  fetchTaskTags,
+  assignTaskTag,
+  unassignTaskTag,
+} from "@/lib/routes/task";
+import { fetchTags, createTag } from "@/lib/routes/Tags";
+import { fetchProjectById } from "@/lib/routes/project";
+
+export default function TaskFormPage() {
   const params = useParams();
   const projectId = Number(params?.id);
+  const [project, setProject] = useState<any | null>(null);
+
+  useEffect(() => {
+    async function loadProject() {
+      if (projectId) {
+        const proj = await fetchProjectById(projectId); // you’ll need this helper
+        setProject(proj);
+      }
+    }
+    loadProject();
+  }, [projectId]);
+  const taskId = Number(params?.taskId);
 
   const [formData, setFormData] = useState<any | null>(null);
   const [originalData, setOriginalData] = useState<any | null>(null);
@@ -41,29 +49,27 @@ export default function ProjectId() {
     { id?: number; name: string }[]
   >([]);
 
-  // fetch project by ID + tags
+  // fetch task by ID + tags
   useEffect(() => {
-    async function loadProject() {
-      const project = await fetchProjectById(projectId);
+    async function loadTask() {
+      const task = await fetchTaskById(taskId);
 
-      const [allTags, projectTags] = await Promise.all([
+      const [allTags, taskTags] = await Promise.all([
         fetchTags(),
-        fetchProjectTags(projectId),
+        fetchTaskTags(taskId),
       ]);
 
       setAvailableTags(allTags);
-      setFormData({ ...project, tags: projectTags });
-      setOriginalData({ ...project, tags: projectTags });
+      setFormData({ ...task, tags: taskTags });
+      setOriginalData({ ...task, tags: taskTags });
     }
-    if (projectId) loadProject();
-  }, [projectId]);
+    if (taskId) loadTask();
+  }, [taskId]);
 
-  // generic change handler
   const handleChange = (key: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  // check if formData has changed
   const isDirty = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(originalData);
   }, [formData, originalData]);
@@ -73,12 +79,11 @@ export default function ProjectId() {
   const handleSave = async () => {
     if (!formData) return;
 
-    // 1. save main project
-    await updateProject(projectId, {
+    // 1. save main task
+    await updateTask(taskId, {
       name: formData.name,
       description: formData.description,
-      start_date: formData.start_date,
-      end_date: formData.end_date,
+      due_date: formData.due_date,
     });
 
     // 2. process tags
@@ -87,30 +92,28 @@ export default function ProjectId() {
 
     const newTags = currentTags.filter((t: any) => !t.id);
 
-    // 2. existing tags newly added (in current but not in original)
     const addedExistingTags = currentTags.filter(
       (t: any) => t.id && !originalTags.some((ot: any) => ot.id === t.id)
     );
 
-    // 3. removed tags
     const removedTags = originalTags.filter(
       (t: any) => !currentTags.some((ct: any) => ct.id === t.id)
     );
 
-    // Create + assign brand new tags
+    // Create + assign new tags
     for (const tag of newTags) {
       const created = await createTag(tag.name, "#F5B027");
-      await assignTag(projectId, created.id);
+      await assignTaskTag(taskId, created.id);
     }
 
-    // Assign existing tags that were newly selected
+    // Assign existing tags
     for (const tag of addedExistingTags) {
-      await assignTag(projectId, tag.id);
+      await assignTaskTag(taskId, tag.id);
     }
 
     // Unassign removed tags
     for (const tag of removedTags) {
-      if (tag.id) await unassignTag(projectId, tag.id);
+      if (tag.id) await unassignTaskTag(taskId, tag.id);
     }
 
     setOriginalData(formData);
@@ -118,37 +121,40 @@ export default function ProjectId() {
   };
 
   const handleDiscard = () => {
-    setFormData(originalData); // reset back to original
+    setFormData(originalData);
   };
 
   if (!formData) return <p>Loading...</p>;
 
   return (
     <MainLayout>
-      <div className="bg-[#f5f6f8] w-full  p-4 h-full">
-        <div className="flex gap-4 w-fit flex-row-reverse  items-center">
-          <div className="flex gap-2 items-center">
-            {/* only show buttons when dirty */}
-            {isDirty && (
-              <div className="flex gap-2 items-center">
-                <Button onClick={handleSave} className="h-8 hover:bg-green-600">
-                  <SaveIcon /> Save
-                </Button>
-                <Button
-                  onClick={handleDiscard}
-                  variant="outline"
-                  className="h-8"
-                >
-                  <XIcon /> Discard
-                </Button>
-              </div>
-            )}
-          </div>
+      <div className="bg-[#f5f6f8] w-full p-4 h-full">
+        <div className="flex gap-4 w-fit flex-row-reverse items-center">
+          {isDirty && (
+            <div className="flex gap-2 items-center">
+              <Button onClick={handleSave} className="h-8 hover:bg-green-600">
+                <SaveIcon /> Save
+              </Button>
+              <Button onClick={handleDiscard} variant="outline" className="h-8">
+                <XIcon /> Discard
+              </Button>
+            </div>
+          )}
           <Breadcrumb className="text-sm">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
                   <Link href="/dashboard">Projects</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <SlashIcon />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href={`/project/${projectId}`}>
+                    {project?.name || `Project ${projectId}`}
+                  </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
@@ -161,24 +167,22 @@ export default function ProjectId() {
           </Breadcrumb>
         </div>
 
-        <div className="flex h-[94%] gap-2 justify-between  mt-4 w-full ">
-          <div className="bg-white w-[68%]  h-full border-1 border-solid border-sidebar-border">
-            {/* title input */}
+        <div className="flex h-[94%] gap-2 justify-between mt-4 w-full ">
+          <div className="bg-white w-[68%] h-full border-1 border-solid border-sidebar-border">
             <div className="p-5">
               <input
                 value={formData.name || ""}
                 onChange={(e) => handleChange("name", e.target.value)}
                 type="text"
-                className="w-[60%] border-[transparent] text-3xl placeholder:text-3xl placeholder:font-normal font-semibold h-10 border-0 border-b-1   hover:border-gray-400   focus:border-teal-700 outline-none"
-                placeholder="eg. Office Party"
+                className="w-[60%] border-[transparent] text-3xl font-semibold h-10 border-0 border-b-1 hover:border-gray-400 focus:border-teal-700 outline-none"
+                placeholder="Task title..."
                 name="name"
                 id="name"
               />
 
-              <div className="column w-full  flex mt-5 ">
-                <div className=" w-[60%]  ">
-                  {/* tags one to many field */}
-                  <div className="flex w-full  gap-10">
+              <div className="column w-full flex mt-5">
+                <div className="w-[60%]">
+                  <div className="flex w-full gap-10">
                     <label htmlFor="tags" className="text-sm font-medium">
                       Tags
                     </label>
@@ -188,33 +192,28 @@ export default function ProjectId() {
                       onChange={(tags) => handleChange("tags", tags)}
                     />
                   </div>
-                  <div className="w-full flex items-center gap-10">
-                    <label htmlFor="tags" className="text-sm font-medium">
-                      Planned Date
+                  <div className="w-full flex items-center gap-10 mt-4">
+                    <label htmlFor="date" className="text-sm font-medium">
+                      Due Date
                     </label>
-                    <div className="w-[60%] flex gap-5 items-center">
+                    <div className="w-[60%]">
                       <DateRangePicker
                         value={{
-                          from: formData.start_date
-                            ? new Date(formData.start_date)
+                          from: formData.due_date
+                            ? new Date(formData.due_date)
                             : undefined,
-                          to: formData.end_date
-                            ? new Date(formData.end_date)
-                            : undefined,
+                          to: undefined, // tasks may only need due_date
                         }}
-                        onChange={(range) => {
-                          handleChange(
-                            "start_date",
-                            range?.from?.toISOString()
-                          );
-                          handleChange("end_date", range?.to?.toISOString());
-                        }}
+                        onChange={(range) =>
+                          handleChange("due_date", range?.from?.toISOString())
+                        }
                       />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+
             <Notebook
               pages={[
                 {
@@ -225,19 +224,28 @@ export default function ProjectId() {
                       onChange={(e) =>
                         handleChange("description", e.target.value)
                       }
-                      className="w-full resize-none text-sm placeholder:text-sm border-0 outline-none h-80"
-                      placeholder="Project description..."
+                      className="w-full resize-none text-sm border-0 outline-none h-80"
+                      placeholder="Task description..."
                     />
                   ),
                 },
+
                 {
-                  title: "Project Members",
-                  content: <InviteMembers projectId={projectId} />,
+                  title: "Assigned Users",
+                  content: (
+                    <textarea
+                      value={formData.description || ""}
+                      onChange={(e) =>
+                        handleChange("description", e.target.value)
+                      }
+                      className="w-full resize-none text-sm border-0 outline-none h-80"
+                      placeholder="Task description..."
+                    />
+                  ),
                 },
               ]}
             />
           </div>
-          <MessageBox object_type="project" object_id={projectId} />
         </div>
       </div>
     </MainLayout>

@@ -1,7 +1,7 @@
 // lib/routes/projects.ts
 import { authFetch } from "../routes/http";
 import endpoint from "../routes/init";
-import { fetchProjectTags } from "../routes/tag";
+import { fetchProjectTags } from "../routes/Tags";
 
 export async function fetchProjects() {
   return authFetch(`${endpoint}/projects/projects`);
