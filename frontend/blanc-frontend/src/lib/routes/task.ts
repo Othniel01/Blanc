@@ -148,7 +148,7 @@ export async function assignTaskUser(taskId: number, userId: number) {
 
 // unassign a user from a task
 export async function unassignTaskUser(taskId: number, userId: number) {
-  return authFetch(`${endpoint}/tasks/${taskId}/assign/${userId}`, {
+  return authFetch(`${endpoint}/tasks/${taskId}/unassign/${userId}`, {
     method: "DELETE",
   });
 }

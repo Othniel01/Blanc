@@ -26,6 +26,8 @@ import {
 } from "@/lib/routes/task";
 import { fetchTags, createTag } from "@/lib/routes/Tags";
 import { fetchProjectById } from "@/lib/routes/project";
+import AssignUsers from "@/lib/components/assignUsers";
+import AssignedUsersTable from "@/lib/components/assignedUserTable";
 
 export default function TaskFormPage() {
   const params = useParams();
@@ -233,14 +235,12 @@ export default function TaskFormPage() {
                 {
                   title: "Assigned Users",
                   content: (
-                    <textarea
-                      value={formData.description || ""}
-                      onChange={(e) =>
-                        handleChange("description", e.target.value)
-                      }
-                      className="w-full resize-none text-sm border-0 outline-none h-80"
-                      placeholder="Task description..."
-                    />
+                    <>
+                      <AssignUsers taskId={taskId} projectId={projectId} />
+                      <div className="mt-4">
+                        <AssignedUsersTable taskId={taskId} />
+                      </div>
+                    </>
                   ),
                 },
               ]}
