@@ -118,3 +118,37 @@ export async function unassignTaskTag(taskId: number, tagId: number) {
     method: "DELETE",
   });
 }
+
+// -----------------------------
+// Assignee Routes (Task-specific)
+// -----------------------------
+
+export interface Assignee {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  invite_code: string;
+  profile_image: string;
+}
+
+// fetch all assignees for a task
+export async function fetchTaskAssignees(taskId: number): Promise<Assignee[]> {
+  return authFetch(`${endpoint}/tasks/${taskId}/assignees`);
+}
+
+// assign a user to a task
+export async function assignTaskUser(taskId: number, userId: number) {
+  return authFetch(`${endpoint}/tasks/${taskId}/assign/${userId}`, {
+    method: "POST",
+  });
+}
+
+// unassign a user from a task
+export async function unassignTaskUser(taskId: number, userId: number) {
+  return authFetch(`${endpoint}/tasks/${taskId}/assign/${userId}`, {
+    method: "DELETE",
+  });
+}

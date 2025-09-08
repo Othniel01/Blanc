@@ -22,14 +22,14 @@ export async function createTag(name: string, color = "#F5B027"): Promise<Tag> {
   });
 }
 
-export async function assignTag(projectId: number, tagId: number) {
-  return authFetch(`${endpoint}/tags/project/${projectId}/assign/${tagId}`, {
-    method: "POST",
-  });
-}
+// export async function assignTag(projectId: number, tagId: number) {
+//   return authFetch(`${endpoint}/tags/project/${projectId}/assign/${tagId}`, {
+//     method: "POST",
+//   });
+// }
 
-export async function unassignTag(projectId: number, tagId: number) {
-  return authFetch(`${endpoint}/tags/project/${projectId}/unassign/${tagId}`, {
-    method: "DELETE",
-  });
-}
+// export async function unassignTag(projectId: number, tagId: number) {
+//   return authFetch(`${endpoint}/tags/project/${projectId}/unassign/${tagId}`, {
+//     method: "DELETE",
+//   });
+// }
