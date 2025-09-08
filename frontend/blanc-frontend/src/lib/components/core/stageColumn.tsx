@@ -22,12 +22,12 @@ export default function StageColumn({ stage, tasks }: Props) {
     isDragging,
   } = useSortable({
     id: `stage-${stage.id}`,
-    data: { type: "stage", stageId: stage.id },
+    data: { type: "stage", stage_id: stage.id },
   });
 
   const { setNodeRef: dropRef } = useDroppable({
     id: stage.id,
-    data: { type: "stage", stageId: stage.id },
+    data: { type: "stage", stage_id: stage.id },
   });
 
   const wrapperStyle = {
@@ -74,7 +74,7 @@ export default function StageColumn({ stage, tasks }: Props) {
         className="rounded-sm flex flex-col gap-2 min-h-[50px] transition-all duration-200 ease-in-out"
       >
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} stageId={stage.id} />
+          <TaskCard key={task.id} task={task} stage_id={stage.id} />
         ))}
       </div>
     </div>

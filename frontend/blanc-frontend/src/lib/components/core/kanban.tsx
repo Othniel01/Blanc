@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   DndContext,
-  closestCenter,
+  closestCorners, // Changed for better performance
   DragEndEvent,
   DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
   DragStartEvent,
+  DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -21,11 +22,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import StageColumn from "@/lib/components/core/stageColumn";
 import TaskCard from "@/lib/components/core/taskCard";
 import { Badge, GripVertical, MoreVerticalIcon } from "lucide-react";
-
 import { useStages } from "@/lib/routes/stages";
+import { fetchTasksWithDetails } from "@/lib/routes/task";
+import { useUpdateTaskStage } from "@/lib/hooks/use_task";
 
 interface Props {
-  projectId: number; // ⬅️ make projectId dynamic via props
+  projectId: number;
 }
 
 export interface Stage {
@@ -39,19 +41,28 @@ export default function Kanban({ projectId }: Props) {
   const { stagesQuery, updateStage } = useStages(projectId);
   const stages: Stage[] = stagesQuery.data ?? [];
   const queryClient = useQueryClient();
-  const [tasks, setTasks] = useState<Task[]>([...initialTasks]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
-  const [activeType, setActiveType] = useState<"task" | "stage" | null>(null); // Added to distinguish type
+  const [activeType, setActiveType] = useState<"task" | "stage" | null>(null);
+  const { mutate: updateTaskStage } = useUpdateTaskStage(projectId);
+
+  React.useEffect(() => {
+    if (!projectId) return;
+
+    fetchTasksWithDetails(projectId)
+      .then((fetchedTasks) => setTasks(fetchedTasks))
+      .catch((err) => console.error("Failed to fetch tasks:", err));
+  }, [projectId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Require 8px movement before drag starts
+        distance: 8,
       },
     })
   );
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const idStr = String(event.active.id);
     if (idStr.startsWith("task-")) {
       setActiveId(Number(idStr.replace("task-", "")));
@@ -60,116 +71,177 @@ export default function Kanban({ projectId }: Props) {
       setActiveId(Number(idStr.replace("stage-", "")));
       setActiveType("stage");
     }
-  };
+  }, []);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-    setActiveType(null);
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over || active.data.current?.type !== "task") return;
 
-    if (!over) return;
-
-    // Handle dragging stages
-    if (active.data.current?.type === "stage") {
-      const activeStageId = Number(String(active.id).replace("stage-", ""));
-      const overStageId = Number(String(over.id).replace("stage-", ""));
-
-      const oldIndex = stages.findIndex((s) => s.id === activeStageId);
-      const newIndex = stages.findIndex((s) => s.id === overStageId);
-
-      if (oldIndex !== newIndex) {
-        const newStages: Stage[] = arrayMove(stages, oldIndex, newIndex).map(
-          (s, i) => ({ ...s, sequence: i + 1 })
-        );
-
-        // ✅ Optimistic update
-        queryClient.setQueryData(["stages", projectId], newStages);
-
-        // ✅ Persist
-        newStages.forEach((s) =>
-          updateStage.mutate({ id: s.id, sequence: s.sequence })
-        );
-      }
-      return;
-    }
-
-    // Handle dragging tasks
-    if (active.data.current?.type === "task") {
       const activeTaskId = Number(String(active.id).replace("task-", ""));
       const activeTask = tasks.find((t) => t.id === activeTaskId);
       if (!activeTask) return;
 
-      const activeStageId = activeTask.stageId;
-      let newStageId = activeStageId;
-      let isOverStage = false;
-      let overTaskId: number | null = null;
+      let newstage_id: number | null = null;
+      const overIdStr = String(over.id);
 
-      if (over.data.current?.type === "task") {
-        overTaskId = Number(String(over.id).replace("task-", ""));
-        newStageId = over.data.current.stageId;
-      } else if (over.data.current?.type === "stage") {
-        newStageId = over.data.current.stageId; // Assumes data.stageId set in StageColumn
-        isOverStage = true;
-      } else {
+      if (overIdStr.startsWith("stage-")) {
+        newstage_id = Number(overIdStr.replace("stage-", ""));
+      } else if (overIdStr.startsWith("task-")) {
+        const overTaskId = Number(overIdStr.replace("task-", ""));
+        const overTask = tasks.find((t) => t.id === overTaskId);
+        if (overTask) newstage_id = overTask.stage_id;
+      }
+
+      if (newstage_id === null || activeTask.stage_id === newstage_id) return;
+
+      // Update tasks state to move task to new stage
+      setTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t.id === activeTaskId ? { ...t, stage_id: newstage_id! } : t
+        )
+      );
+    },
+    [tasks]
+  );
+
+  // Memoize tasksByStage for render and drag operations
+  const tasksByStage = useMemo(() => {
+    const result: Record<number, Task[]> = {};
+    stages.forEach((stage) => {
+      result[stage.id] = tasks.filter((t) => t.stage_id === stage.id);
+    });
+    return result;
+  }, [tasks, stages]);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveId(null);
+      setActiveType(null);
+
+      if (!over) return;
+
+      // Handle dragging stages
+      if (active.data.current?.type === "stage") {
+        const activestage_id = Number(String(active.id).replace("stage-", ""));
+        const overstage_id = Number(String(over.id).replace("stage-", ""));
+
+        const oldIndex = stages.findIndex((s) => s.id === activestage_id);
+        const newIndex = stages.findIndex((s) => s.id === overstage_id);
+
+        if (oldIndex !== newIndex) {
+          const newStages: Stage[] = arrayMove(stages, oldIndex, newIndex).map(
+            (s, i) => ({ ...s, sequence: i + 1 })
+          );
+
+          // Optimistic update
+          queryClient.setQueryData(["stages", projectId], newStages);
+
+          // Batch mutations
+          newStages.forEach((s) =>
+            updateStage.mutate({ id: s.id, sequence: s.sequence })
+          );
+        }
         return;
       }
 
-      if (activeTaskId === overTaskId && activeStageId === newStageId) return;
+      // Handle dragging tasks
+      if (active.data.current?.type === "task") {
+        const activeTaskId = Number(String(active.id).replace("task-", ""));
+        const activeTask = tasks.find((t) => t.id === activeTaskId);
+        if (!activeTask) return;
 
-      // Compute tasksByStage based on current order
-      const tasksByStage: Record<number, Task[]> = {};
-      stages.forEach((stage) => {
-        tasksByStage[stage.id] = tasks.filter((t) => t.stageId === stage.id);
-      });
+        const activestage_id = activeTask.stage_id;
+        let newstage_id = activestage_id;
+        let isOverStage = false;
+        let overTaskId: number | null = null;
 
-      // Remove active task from original stage
-      tasksByStage[activeStageId] = tasksByStage[activeStageId].filter(
-        (t) => t.id !== activeTaskId
-      );
+        if (over.data.current?.type === "task") {
+          overTaskId = Number(String(over.id).replace("task-", ""));
+          newstage_id = over.data.current.stage_id;
+        } else if (over.data.current?.type === "stage") {
+          newstage_id = over.data.current.stage_id;
+          isOverStage = true;
+        } else {
+          return;
+        }
 
-      // Create updated task
-      const newTask = { ...activeTask, stageId: newStageId };
+        if (activeTaskId === overTaskId && activestage_id === newstage_id)
+          return;
 
-      // Calculate insertion index
-      let newIndex;
-      if (isOverStage) {
-        newIndex = tasksByStage[newStageId].length;
-      } else {
-        const overIndex = tasksByStage[newStageId].findIndex(
-          (t) => t.id === overTaskId
-        );
-        const isBelow = event.delta.y > 0;
-        newIndex = overIndex + (isBelow ? 1 : 0);
+        // Update tasks array incrementally
+        setTasks((prevTasks) => {
+          // Remove task from current position
+          const updatedTasks = prevTasks.filter((t) => t.id !== activeTaskId);
+          const newTask = { ...activeTask, stage_id: newstage_id };
+
+          // Find insertion index in new stage
+          const tasksInStage = tasksByStage[newstage_id] || [];
+
+          const newIndex = isOverStage
+            ? tasksInStage.length
+            : tasksInStage.findIndex((t) => t.id === overTaskId) +
+              (event.delta.y > 0 ? 1 : 0);
+
+          // Find global index to insert
+          let globalIndex = 0;
+          for (const stage of stages) {
+            if (stage.id === newstage_id) {
+              globalIndex += newIndex;
+              break;
+            }
+            globalIndex += tasksByStage[stage.id]?.length || 0; // fallback here too
+          }
+
+          // Insert task at global index
+          return [
+            ...updatedTasks.slice(0, globalIndex),
+            newTask,
+            ...updatedTasks.slice(globalIndex),
+          ];
+        });
+
+        updateTaskStage({ taskId: activeTaskId, stage_id: newstage_id });
+
+        // TODO: Implement useTasks hook with updateTask
+        // updateTask.mutate({ id: activeTaskId, stage_id: newstage_id });
       }
+    },
+    [
+      stages,
+      queryClient,
+      projectId,
+      updateStage,
+      tasks,
+      updateTaskStage,
+      tasksByStage,
+    ]
+  );
 
-      // Insert into new stage
-      tasksByStage[newStageId] = [
-        ...tasksByStage[newStageId].slice(0, newIndex),
-        newTask,
-        ...tasksByStage[newStageId].slice(newIndex),
-      ];
+  // Memoize active items for DragOverlay
+  const activeStage = useMemo(
+    () =>
+      activeType === "stage" && activeId !== null
+        ? stages.find((s) => s.id === activeId)
+        : null,
+    [activeType, activeId, stages]
+  );
 
-      // Reconstruct flat tasks array
-      const newTasks = stages.flatMap((stage) => tasksByStage[stage.id] || []);
-      setTasks(newTasks);
-    }
-  };
-
-  // Find the dragged item for DragOverlay
-  const activeStage =
-    activeType === "stage" && activeId !== null
-      ? stages.find((s) => s.id === activeId)
-      : null;
-  const activeTask =
-    activeType === "task" && activeId !== null
-      ? tasks.find((t) => t.id === activeId)
-      : null;
+  const activeTask = useMemo(
+    () =>
+      activeType === "task" && activeId !== null
+        ? tasks.find((t) => t.id === activeId)
+        : null,
+    [activeType, activeId, tasks]
+  );
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={closestCorners} // Changed for performance
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-6 w-full h-full p-4 bg-[#f5f6f8] overflow-x-auto">
@@ -181,12 +253,11 @@ export default function Kanban({ projectId }: Props) {
             <StageColumn
               key={stage.id}
               stage={stage}
-              tasks={tasks.filter((t) => t.stageId === stage.id)}
+              tasks={tasksByStage[stage.id] || []} // Use memoized tasks
             />
           ))}
         </SortableContext>
       </div>
-      {/* Drag Overlay for smooth dragging visuals */}
       <DragOverlay dropAnimation={null}>
         {activeStage && (
           <div
@@ -195,7 +266,7 @@ export default function Kanban({ projectId }: Props) {
               minWidth: "320px",
               width: "320px",
               opacity: 0.8,
-              transform: "scale(1.02)", // Slight scale for visual pop
+              transform: "scale(1.02)",
               boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
             }}
           >
@@ -206,29 +277,19 @@ export default function Kanban({ projectId }: Props) {
               </div>
               <div className="flex items-center gap-2">
                 <Badge className="text-xs">
-                  {tasks.filter((t) => t.stageId === activeStage.id).length}
+                  {tasksByStage[activeStage.id]?.length || 0}
                 </Badge>
                 <MoreVerticalIcon className="w-4 h-4" />
               </div>
             </div>
-            <div className="bg-gray-200 p-2 rounded-sm flex flex-col gap-2 min-h-[50px]">
-              {tasks
-                .filter((t) => t.stageId === activeStage.id)
-                .map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    stageId={activeStage.id}
-                    isDragging={!!activeId}
-                  />
-                ))}
-            </div>
+            {/* Render minimal task list to reduce overhead */}
+            <div className="bg-gray-200 p-2 rounded-sm min-h-[50px]" />
           </div>
         )}
         {activeTask && (
           <TaskCard
             task={activeTask}
-            stageId={activeTask.stageId}
+            stage_id={activeTask.stage_id}
             style={{
               opacity: 0.8,
               transform: "scale(1.02)",
