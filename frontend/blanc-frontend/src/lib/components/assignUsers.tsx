@@ -12,6 +12,7 @@ import {
   CommandItem,
 } from "@/lib/components/ui/command";
 import { Button } from "@/lib/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 interface Props {
   taskId: number;
@@ -79,15 +80,17 @@ export default function AssignUsers({ taskId, projectId }: Props) {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <img
-                        src={
-                          m.user.profile_image ||
-                          m.user.avatarUrl ||
-                          "https://github.com/shadcn.png"
-                        }
-                        alt={m.user.username || m.user.email}
-                        className="w-6 h-6 rounded-full"
-                      />
+                      <Avatar>
+                        <AvatarImage
+                          alt={m.user.username || m.user.email}
+                          src={
+                            m.user.profile_image ||
+                            m.user.avatarUrl ||
+                            "https://github.com/shadcn.png"
+                          }
+                        />
+                        <AvatarFallback>CN</AvatarFallback>
+                      </Avatar>
                       <div>
                         <div className="text-sm font-medium">
                           {m.user.username}
@@ -114,14 +117,16 @@ export default function AssignUsers({ taskId, projectId }: Props) {
         <div className="flex-1">
           {selected ? (
             <div className="flex items-center gap-2 text-sm">
-              <img
-                src={
-                  selected.profile_image ||
-                  selected.avatarUrl ||
-                  "/avatar-placeholder.png"
-                }
-                className="w-6 h-6 rounded-full"
-              />
+              <Avatar>
+                <AvatarImage
+                  src={
+                    selected.profile_image ||
+                    selected.avatarUrl ||
+                    "/avatar-placeholder.png"
+                  }
+                />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
               <div>
                 <div className="font-medium">{selected.username}</div>
                 <div className="text-xs text-muted-foreground">
@@ -138,6 +143,7 @@ export default function AssignUsers({ taskId, projectId }: Props) {
 
         <Button
           disabled={!selected || assignMutation.isLoading}
+          className="h-7 text-sm w-fit"
           onClick={() => {
             if (!selected) return;
             assignMutation.mutate(selected.id, {

@@ -31,12 +31,13 @@ export async function fetchMessages(
 
   if (!res.ok) throw new Error("Failed to fetch messages");
   const data = await res.json();
+
   return data.map((msg: any) => ({
     id: msg.id,
-    author_id: msg.author_id,
-    username: msg.author_id === 1 ? "You" : "User", // customize as needed
-    avatar: "https://github.com/othniel01.png", // optional
-    fallback: "U",
+    author_id: msg.author?.id,
+    username: msg.author?.username ?? "Unknown",
+    avatar: "https://github.com/othniel01.png", // optional, replace with msg.author.avatar if you add one later
+    fallback: msg.author?.username?.[0]?.toUpperCase() ?? "U",
     message: msg.content,
     timestamp: new Date(msg.created_at).toLocaleTimeString([], {
       hour: "2-digit",

@@ -2,6 +2,8 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+from app.db.schemas.user_profile_schema import UserProfileOut
+
 
 class MessageBase(BaseModel):
     object_type: str
@@ -22,6 +24,7 @@ class MessageOut(MessageBase):
     id: int
     author_id: int | None
     created_at: datetime
+    author: UserProfileOut | None
 
     class Config:
         orm_mode = True
