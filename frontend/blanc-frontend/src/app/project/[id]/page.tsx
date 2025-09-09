@@ -30,6 +30,8 @@ import {
   unassignTag,
 } from "@/lib/routes/Tags";
 import InviteMembers from "@/lib/components/core/inviteMembers";
+import { Skeleton } from "@/lib/components/ui/skeleton";
+import Isfavourite from "@/lib/components/core/favourite";
 
 export default function ProjectId() {
   const params = useParams();
@@ -112,7 +114,63 @@ export default function ProjectId() {
     setFormData(originalData);
   };
 
-  if (!formData) return <p>Loading...</p>;
+  if (!formData) {
+    return (
+      <MainLayout>
+        <div className="bg-[#f5f6f8] w-full p-4 h-full">
+          <div className="flex gap-4 w-fit flex-row-reverse items-center">
+            <Breadcrumb className="text-lg">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <Skeleton className="h-6 w-24 rounded-md" />
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <SlashIcon />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>
+                  <Skeleton className="h-6 w-32 rounded-md" />
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+
+          <div className="flex h-[94%] gap-2 justify-between mt-4 w-full">
+            {/* Left side */}
+            <div className="bg-white w-[68%] h-full border border-sidebar-border">
+              <div className="p-5 space-y-5">
+                {/* Project title */}
+                <Skeleton className="h-10 w-[60%] rounded-md" />
+
+                {/* Tags + Dates */}
+                <div className="flex flex-col gap-6 w-[60%] mt-5">
+                  <div className="flex gap-10 items-center">
+                    <span className="text-sm font-medium">Tags</span>
+                    <Skeleton className="h-8 w-40 rounded-md" />
+                  </div>
+
+                  <div className="flex gap-10 items-center">
+                    <span className="text-sm font-medium">Planned Date</span>
+                    <Skeleton className="h-8 w-60 rounded-md" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Notebook section */}
+              <div className="p-5">
+                <Skeleton className="h-40 w-full rounded-md mb-4" />
+                <Skeleton className="h-40 w-full rounded-md" />
+              </div>
+            </div>
+
+            {/* Right side (MessageBox placeholder) */}
+            <div className="flex-1">
+              <Skeleton className="h-full w-full rounded-md" />
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -135,7 +193,7 @@ export default function ProjectId() {
               </div>
             )}
           </div>
-          <Breadcrumb className="text-sm">
+          <Breadcrumb className="text-lg">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
@@ -156,15 +214,18 @@ export default function ProjectId() {
           <div className="bg-white w-[68%]  h-full border-1 border-solid border-sidebar-border">
             {/* title input */}
             <div className="p-5">
-              <input
-                value={formData.name || ""}
-                onChange={(e) => handleChange("name", e.target.value)}
-                type="text"
-                className="w-[60%] border-[transparent] text-3xl placeholder:text-3xl placeholder:font-normal font-semibold h-10 border-0 border-b-1   hover:border-gray-400   focus:border-teal-700 outline-none"
-                placeholder="eg. Office Party"
-                name="name"
-                id="name"
-              />
+              <div className="flex items-center gap-2">
+                <Isfavourite />
+                <input
+                  value={formData.name || ""}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  type="text"
+                  className="w-[60%] border-[transparent] text-3xl placeholder:text-3xl placeholder:font-normal font-semibold h-10 border-0 border-b-1   hover:border-gray-400   focus:border-teal-700 outline-none"
+                  placeholder="eg. Office Party"
+                  name="name"
+                  id="name"
+                />
+              </div>
 
               <div className="column w-full  flex mt-5 ">
                 <div className=" w-[60%]  ">
