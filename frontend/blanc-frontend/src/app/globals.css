@@ -122,6 +122,13 @@
   color: black;
 }
 
+/* .triangle {
+  width: 400px;
+  height: 80px;
+  clip-path: polygon(49.97% 31.68%, 49.93% 31.74%, 72% 61.78%, 26.78% 61.78%);
+  background-color: #bd4545;
+} */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

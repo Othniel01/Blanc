@@ -41,5 +41,18 @@ export function useStages(projectId: number) {
     },
   });
 
-  return { stagesQuery, createStage, updateStage };
+  // 🔹 Update a task's stage via /tasks/{task_id}
+  const updateTaskStage = useMutation({
+    mutationFn: ({ taskId, stageId }: { taskId: number; stageId: number }) =>
+      authFetch(`${endpoint}/tasks/${taskId}`, {
+        method: "PUT",
+        body: JSON.stringify({ stage_id: stageId }),
+      }),
+    onSuccess: () => {
+      // Invalidate queries so the task list reflects the new stage
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+    },
+  });
+
+  return { stagesQuery, createStage, updateStage, updateTaskStage };
 }

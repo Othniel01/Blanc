@@ -33,9 +33,9 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = None
     start_date: datetime
     end_date: Optional[datetime] = None
-    is_favourite: Optional[bool] = None
-    allow_milestones: Optional[bool] = None
-    allow_timesheets: Optional[bool] = None
+    is_favourite: Optional[bool] = False
+    allow_milestones: Optional[bool] = False
+    allow_timesheets: Optional[bool] = False
     status: Optional[str] = None
     active: Optional[bool] = None
 

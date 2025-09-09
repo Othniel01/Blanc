@@ -29,6 +29,8 @@ import { fetchProjectById } from "@/lib/routes/project";
 import AssignUsers from "@/lib/components/assignUsers";
 import AssignedUsersTable from "@/lib/components/assignedUserTable";
 import MessageBox from "@/lib/components/core/chat";
+import StageWidget from "@/lib/components/core/stageWidget";
+import { Skeleton } from "@/lib/components/ui/skeleton";
 
 export default function TaskFormPage() {
   const params = useParams();
@@ -127,49 +129,115 @@ export default function TaskFormPage() {
     setFormData(originalData);
   };
 
-  if (!formData) return <p>Loading...</p>;
+  if (!formData) {
+    return (
+      <MainLayout>
+        <div className="bg-[#f5f6f8] w-full p-4 h-full">
+          <div className="flex gap-4 w-fit flex-row-reverse items-center">
+            <Breadcrumb className="text-lg">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <Skeleton className="h-6 w-24 rounded-md" />
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <SlashIcon />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>
+                  <Skeleton className="h-6 w-32 rounded-md" />
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+
+          <div className="flex h-[94%] gap-2 justify-between mt-4 w-full">
+            {/* Left side */}
+            <div className="bg-white w-[68%] h-full border border-sidebar-border">
+              <div className="p-5 space-y-5">
+                {/* Project title */}
+                <Skeleton className="h-10 w-[60%] rounded-md" />
+
+                {/* Tags + Dates */}
+                <div className="flex flex-col gap-6 w-[60%] mt-5">
+                  <div className="flex gap-10 items-center">
+                    <span className="text-sm font-medium">Tags</span>
+                    <Skeleton className="h-8 w-40 rounded-md" />
+                  </div>
+
+                  <div className="flex gap-10 items-center">
+                    <span className="text-sm font-medium">Planned Date</span>
+                    <Skeleton className="h-8 w-60 rounded-md" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Notebook section */}
+              <div className="p-5">
+                <Skeleton className="h-40 w-full rounded-md mb-4" />
+                <Skeleton className="h-40 w-full rounded-md" />
+              </div>
+            </div>
+
+            {/* Right side (MessageBox placeholder) */}
+            <div className="flex-1">
+              <Skeleton className="h-full w-full rounded-md" />
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="bg-[#f5f6f8] w-full p-4 h-full">
-        <div className="flex gap-4 w-fit flex-row-reverse items-center">
-          {isDirty && (
-            <div className="flex gap-2 items-center">
-              <Button onClick={handleSave} className="h-8 hover:bg-green-600">
-                <SaveIcon /> Save
-              </Button>
-              <Button onClick={handleDiscard} variant="outline" className="h-8">
-                <XIcon /> Discard
-              </Button>
-            </div>
-          )}
-          <Breadcrumb className="text-sm">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/dashboard">Projects</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <SlashIcon />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href={`/project/${projectId}/tasks`}>
-                    {project?.name || `Project ${projectId}`}
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <SlashIcon />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbPage>{formData.name}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4 w-fit flex-row-reverse items-center">
+            {isDirty && (
+              <div className="flex gap-2 items-center">
+                <Button onClick={handleSave} className="h-8 hover:bg-green-600">
+                  <SaveIcon /> Save
+                </Button>
+                <Button
+                  onClick={handleDiscard}
+                  variant="outline"
+                  className="h-8"
+                >
+                  <XIcon /> Discard
+                </Button>
+              </div>
+            )}
+            <Breadcrumb>
+              <BreadcrumbList className="text-xs">
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/dashboard">Projects</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <SlashIcon />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href={`/project/${projectId}/tasks`}>
+                      {project?.name || `Project ${projectId}`}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <SlashIcon />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{formData.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          <StageWidget
+            taskId={taskId}
+            projectId={projectId}
+            currentStageId={formData.stage_id}
+          />
         </div>
-
         <div className="flex h-[94%] gap-2 justify-between mt-4 w-full ">
           <div className="bg-white w-[68%] h-full border-1 border-solid border-sidebar-border">
             <div className="p-5">
