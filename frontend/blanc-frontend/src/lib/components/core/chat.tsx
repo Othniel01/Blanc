@@ -62,7 +62,7 @@ export default function MessageBox({
       const newMsg: Message = {
         id: savedMessage.id,
         author_id: currentUser.id,
-        username: "You",
+        username: currentUser.username,
         avatar: "https://github.com/othniel01.png",
         fallback: "U",
         message: savedMessage.content,

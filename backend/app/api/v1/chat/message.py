@@ -1,7 +1,6 @@
 # app/api/routes/message.py
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
+from sqlalchemy.orm import Session, joinedload
 from ....db.session import get_db
 from ....models.message import Message
 from ....db.schemas.chat.message_schema import MessageCreate, MessageUpdate, MessageOut
@@ -51,6 +50,7 @@ def get_messages(
 
     messages = (
         db.query(Message)
+        .options(joinedload(Message.author))
         .filter(Message.object_type == object_type, Message.object_id == object_id)
         .order_by(Message.created_at.asc())
         .all()

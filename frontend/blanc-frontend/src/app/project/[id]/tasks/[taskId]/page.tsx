@@ -28,6 +28,7 @@ import { fetchTags, createTag } from "@/lib/routes/Tags";
 import { fetchProjectById } from "@/lib/routes/project";
 import AssignUsers from "@/lib/components/assignUsers";
 import AssignedUsersTable from "@/lib/components/assignedUserTable";
+import MessageBox from "@/lib/components/core/chat";
 
 export default function TaskFormPage() {
   const params = useParams();
@@ -154,7 +155,7 @@ export default function TaskFormPage() {
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href={`/project/${projectId}`}>
+                  <Link href={`/project/${projectId}/tasks`}>
                     {project?.name || `Project ${projectId}`}
                   </Link>
                 </BreadcrumbLink>
@@ -246,6 +247,7 @@ export default function TaskFormPage() {
               ]}
             />
           </div>
+          <MessageBox object_type="task" object_id={taskId} />
         </div>
       </div>
     </MainLayout>

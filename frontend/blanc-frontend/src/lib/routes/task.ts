@@ -53,7 +53,6 @@ export async function fetchTasksWithDetails(
 
   const taskIds = tasks.map((t) => t.id);
 
-  // batch message counts
   let messageCounts: Record<number, number> = {};
   try {
     const counts = await authFetch(
@@ -64,7 +63,6 @@ export async function fetchTasksWithDetails(
     console.warn("Failed to fetch message counts", e);
   }
 
-  // fetch tags
   const tagsByTask: Record<number, string[]> = {};
   await Promise.all(
     taskIds.map(async (taskId) => {
@@ -134,19 +132,16 @@ export interface Assignee {
   profile_image: string;
 }
 
-// fetch all assignees for a task
 export async function fetchTaskAssignees(taskId: number): Promise<Assignee[]> {
   return authFetch(`${endpoint}/tasks/${taskId}/assignees`);
 }
 
-// assign a user to a task
 export async function assignTaskUser(taskId: number, userId: number) {
   return authFetch(`${endpoint}/tasks/${taskId}/assign/${userId}`, {
     method: "POST",
   });
 }
 
-// unassign a user from a task
 export async function unassignTaskUser(taskId: number, userId: number) {
   return authFetch(`${endpoint}/tasks/${taskId}/unassign/${userId}`, {
     method: "DELETE",

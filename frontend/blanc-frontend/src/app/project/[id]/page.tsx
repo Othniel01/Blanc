@@ -58,12 +58,10 @@ export default function ProjectId() {
     if (projectId) loadProject();
   }, [projectId]);
 
-  // generic change handler
   const handleChange = (key: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  // check if formData has changed
   const isDirty = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(originalData);
   }, [formData, originalData]);
@@ -73,7 +71,6 @@ export default function ProjectId() {
   const handleSave = async () => {
     if (!formData) return;
 
-    // 1. save main project
     await updateProject(projectId, {
       name: formData.name,
       description: formData.description,
@@ -81,34 +78,28 @@ export default function ProjectId() {
       end_date: formData.end_date,
     });
 
-    // 2. process tags
     const currentTags = formData.tags || [];
     const originalTags = originalData?.tags || [];
 
     const newTags = currentTags.filter((t: any) => !t.id);
 
-    // 2. existing tags newly added (in current but not in original)
     const addedExistingTags = currentTags.filter(
       (t: any) => t.id && !originalTags.some((ot: any) => ot.id === t.id)
     );
 
-    // 3. removed tags
     const removedTags = originalTags.filter(
       (t: any) => !currentTags.some((ct: any) => ct.id === t.id)
     );
 
-    // Create + assign brand new tags
     for (const tag of newTags) {
       const created = await createTag(tag.name, "#F5B027");
       await assignTag(projectId, created.id);
     }
 
-    // Assign existing tags that were newly selected
     for (const tag of addedExistingTags) {
       await assignTag(projectId, tag.id);
     }
 
-    // Unassign removed tags
     for (const tag of removedTags) {
       if (tag.id) await unassignTag(projectId, tag.id);
     }
@@ -118,7 +109,7 @@ export default function ProjectId() {
   };
 
   const handleDiscard = () => {
-    setFormData(originalData); // reset back to original
+    setFormData(originalData);
   };
 
   if (!formData) return <p>Loading...</p>;
@@ -177,7 +168,6 @@ export default function ProjectId() {
 
               <div className="column w-full  flex mt-5 ">
                 <div className=" w-[60%]  ">
-                  {/* tags one to many field */}
                   <div className="flex w-full  gap-10">
                     <label htmlFor="tags" className="text-sm font-medium">
                       Tags

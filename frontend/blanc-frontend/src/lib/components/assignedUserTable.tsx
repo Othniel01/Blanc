@@ -7,6 +7,7 @@ import {
   useUnassignTaskUser,
 } from "@/lib/hooks/use_task_assignees";
 import { Button } from "@/lib/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export default function AssignedUsersTable({ taskId }: { taskId: number }) {
   const { data: assignees = [], isLoading } = useTaskAssignees(taskId);
@@ -25,10 +26,12 @@ export default function AssignedUsersTable({ taskId }: { taskId: number }) {
           className="flex items-center justify-between gap-4 p-2 border rounded-sm"
         >
           <div className="flex items-center gap-3">
-            <img
-              src={u.profile_image || "https://github.com/shadcn.png"}
-              className="w-8 h-8 rounded-full"
-            />
+            <Avatar>
+              <AvatarImage
+                src={u.profile_image || "https://github.com/shadcn.png"}
+              />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
             <div>
               <div className="font-medium">{u.username}</div>
               <div className="text-xs text-muted-foreground">{u.email}</div>
@@ -37,6 +40,7 @@ export default function AssignedUsersTable({ taskId }: { taskId: number }) {
           <div>
             <Button
               size="sm"
+              className="h-7 text-sm w-fit"
               variant="destructive"
               onClick={() => unassign.mutate(u.id)}
               disabled={unassign.isLoading}
