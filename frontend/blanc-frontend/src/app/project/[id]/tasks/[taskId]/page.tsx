@@ -31,6 +31,7 @@ import AssignedUsersTable from "@/lib/components/assignedUserTable";
 import MessageBox from "@/lib/components/core/chat";
 import StageWidget from "@/lib/components/core/stageWidget";
 import { Skeleton } from "@/lib/components/ui/skeleton";
+import PriorityRating from "@/lib/components/core/pRating";
 
 export default function TaskFormPage() {
   const params = useParams();
@@ -57,8 +58,7 @@ export default function TaskFormPage() {
   // fetch task by ID + tags
   useEffect(() => {
     async function loadTask() {
-      const task = await fetchTaskById(taskId);
-
+      const task = await fetchTaskById(taskId, projectId); // <-- pass both
       const [allTags, taskTags] = await Promise.all([
         fetchTags(),
         fetchTaskTags(taskId),
@@ -68,8 +68,8 @@ export default function TaskFormPage() {
       setFormData({ ...task, tags: taskTags });
       setOriginalData({ ...task, tags: taskTags });
     }
-    if (taskId) loadTask();
-  }, [taskId]);
+    if (taskId && projectId) loadTask();
+  }, [taskId, projectId]);
 
   const handleChange = (key: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [key]: value }));
@@ -170,14 +170,12 @@ export default function TaskFormPage() {
                 </div>
               </div>
 
-              {/* Notebook section */}
               <div className="p-5">
                 <Skeleton className="h-40 w-full rounded-md mb-4" />
                 <Skeleton className="h-40 w-full rounded-md" />
               </div>
             </div>
 
-            {/* Right side (MessageBox placeholder) */}
             <div className="flex-1">
               <Skeleton className="h-full w-full rounded-md" />
             </div>
@@ -194,43 +192,55 @@ export default function TaskFormPage() {
           <div className="flex gap-4 w-fit flex-row-reverse items-center">
             {isDirty && (
               <div className="flex gap-2 items-center">
-                <Button onClick={handleSave} className="h-8 hover:bg-green-600">
+                <Button
+                  onClick={handleSave}
+                  className="h-7 text-xs hover:bg-green-600"
+                >
                   <SaveIcon /> Save
                 </Button>
                 <Button
                   onClick={handleDiscard}
                   variant="outline"
-                  className="h-8"
+                  className="h-7 text-xs"
                 >
                   <XIcon /> Discard
                 </Button>
               </div>
             )}
-            <Breadcrumb>
-              <BreadcrumbList className="text-xs">
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link href="/dashboard">Projects</Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <SlashIcon />
-                </BreadcrumbSeparator>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link href={`/project/${projectId}/tasks`}>
-                      {project?.name || `Project ${projectId}`}
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <SlashIcon />
-                </BreadcrumbSeparator>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{formData.name}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+            <div className="flex items-center gap-2">
+              <Link href={`/project/${projectId}/tasks/new`}>
+                <Button variant="outline" className="h-8 text-xs w-14">
+                  New
+                </Button>
+              </Link>
+
+              <div className="flex flex-col gap-1">
+                <Breadcrumb>
+                  <BreadcrumbList className="text-xs">
+                    <BreadcrumbItem>
+                      <BreadcrumbLink asChild>
+                        <Link href="/projects">Projects</Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbLink asChild>
+                        <Link href={`/project/${projectId}/tasks`}>
+                          {project?.name || `Project ${projectId}`}
+                        </Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{formData.name}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+                <p className="text-xs font-medium text-teal-900">
+                  {formData.name}
+                </p>
+              </div>
+            </div>
           </div>
           <StageWidget
             taskId={taskId}
@@ -280,6 +290,16 @@ export default function TaskFormPage() {
                         }
                       />
                     </div>
+                  </div>
+                  <div className="w-full flex items-center gap-10 mt-4">
+                    <label htmlFor="date" className="text-sm font-medium">
+                      Priority
+                    </label>
+                    <PriorityRating
+                      taskId={taskId}
+                      initialPriority={formData.priority ?? 0} // <-- use formData
+                      onUpdated={(p) => handleChange("priority", p)}
+                    />
                   </div>
                 </div>
               </div>

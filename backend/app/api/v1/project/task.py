@@ -1,6 +1,6 @@
 # app/api/routes/task.py
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy import asc, desc, func
 from sqlalchemy.orm import Session
 from typing import Dict, List, Optional
@@ -55,9 +55,34 @@ def create_task(
     # Ensure current_user is a member of the project
     project = require_project_membership(db, task.project_id, current_user.id)
 
+    stage_id = task.stage_id
+    if stage_id:
+
+        stage = (
+            db.query(Stage)
+            .filter(Stage.id == stage_id, Stage.project_id == task.project_id)
+            .first()
+        )
+        if not stage:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid stage_id: Stage does not belong to this project",
+            )
+    else:
+        # Fallback to default stage
+        stage = (
+            db.query(Stage)
+            .filter(Stage.project_id == task.project_id, Stage.is_default == True)
+            .first()
+        )
+        if not stage:
+            raise HTTPException(
+                status_code=400, detail="No default stage found for this project"
+            )
+        stage_id = stage.id
+
     db_assignees = []
     if task.assignee_ids:
-        # Assignees must also be project members
         db_assignees = (
             db.query(Users)
             .join(ProjectMember, ProjectMember.user_id == Users.id)
@@ -73,7 +98,7 @@ def create_task(
         description=task.description,
         project_id=task.project_id,
         milestone_id=task.milestone_id,
-        stage_id=task.stage_id,
+        stage_id=stage_id,
         priority=task.priority,
         due_date=task.due_date,
         assignees=db_assignees,
@@ -82,6 +107,7 @@ def create_task(
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
+
     return new_task
 
 
@@ -352,11 +378,30 @@ def bulk_duplicate_tasks(
     }
 
 
+# Get path task
+@router.get("/projects/{project_id}/tasks/{task_id}", response_model=TaskOut)
+def get_task_in_project(
+    project_id: int = Path(..., description="ID of the project"),
+    task_id: int = Path(..., description="ID of the task"),
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+):
+    require_project_membership(db, project_id, current_user.id)
+
+    task = (
+        db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
+    )
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found in this project")
+
+    return TaskOut.from_orm_with_assignees(task)
+
+
 # -----------------------------
 # Read one task
 # -----------------------------
 @router.get("/{task_id}", response_model=TaskOut)
-def get_task(
+def get_task_by_id(
     task_id: int,
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user),

@@ -41,7 +41,7 @@ export function LoginForm({
       localStorage.setItem("refresh_token", data.refresh_token);
 
       // ✅ Only now navigate to dashboard
-      router.replace("/dashboard"); // use replace to prevent back button
+      router.replace("/projects"); // use replace to prevent back button
     } catch (err: any) {
       setError(err.message);
     } finally {

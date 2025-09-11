@@ -1,11 +1,14 @@
+import { Tag } from "../routes/Tags";
+
 // data.ts
 export interface Task {
   id: number;
   name: string;
-  status: string;
+  project_id: number;
   description: string;
-  tags: string[];
+  tags: Tag[];
   assignees: { id: number; avatarUrl: string }[];
+  status: string;
   stage_id: number;
   messageCount: number;
 }

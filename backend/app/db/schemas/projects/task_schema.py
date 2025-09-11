@@ -14,7 +14,7 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     project_id: int  # must belong to a project
-    stage_id: Optional[int] = 1
+    stage_id: Optional[int] = None
     assignee_ids: Optional[List[int]] = []
     milestone_id: Optional[int] = None
 

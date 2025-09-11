@@ -1,4 +1,5 @@
 "use client";
+
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DateRangePicker } from "@/lib/components/date-range";
@@ -31,7 +32,7 @@ import {
 } from "@/lib/routes/Tags";
 import InviteMembers from "@/lib/components/core/inviteMembers";
 import { Skeleton } from "@/lib/components/ui/skeleton";
-import Isfavourite from "@/lib/components/core/favourite";
+import IsFavourite from "@/lib/components/core/favourite";
 
 export default function ProjectId() {
   const params = useParams();
@@ -180,34 +181,44 @@ export default function ProjectId() {
             {/* only show buttons when dirty */}
             {isDirty && (
               <div className="flex gap-2 items-center">
-                <Button onClick={handleSave} className="h-8 hover:bg-green-600">
+                <Button
+                  onClick={handleSave}
+                  className="h-7 text-xs hover:bg-green-600"
+                >
                   <SaveIcon /> Save
                 </Button>
                 <Button
                   onClick={handleDiscard}
                   variant="outline"
-                  className="h-8"
+                  className="h-7 text-xs"
                 >
                   <XIcon /> Discard
                 </Button>
               </div>
             )}
           </div>
-          <Breadcrumb className="text-lg">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/dashboard">Projects</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <SlashIcon />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbPage>{formData.name}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+          <div className="flex items-center gap-2">
+            <Link href="/project/new">
+              <Button variant="outline" className="h-8 text-xs w-14">
+                New
+              </Button>
+            </Link>
+
+            <Breadcrumb className="text-lg">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/projects">Projects</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{formData.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
         </div>
 
         <div className="flex h-[94%] gap-2 justify-between  mt-4 w-full ">
@@ -215,7 +226,11 @@ export default function ProjectId() {
             {/* title input */}
             <div className="p-5">
               <div className="flex items-center gap-2">
-                <Isfavourite />
+                <IsFavourite
+                  projectId={projectId}
+                  initialValue={formData.is_favourite}
+                  onUpdated={(val) => handleChange("is_favourite", val ? 1 : 0)}
+                />
                 <input
                   value={formData.name || ""}
                   onChange={(e) => handleChange("name", e.target.value)}

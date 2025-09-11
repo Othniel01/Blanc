@@ -55,3 +55,15 @@ export async function removeProjectMember(projectId: number, userId: number) {
     method: "DELETE",
   });
 }
+
+export async function createProject(data: {
+  name: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+}) {
+  return authFetch(`${endpoint}/projects`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}

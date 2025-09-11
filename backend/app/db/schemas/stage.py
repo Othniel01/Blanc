@@ -14,6 +14,7 @@ class StageCreate(StageBase):
 class StageUpdate(BaseModel):
     name: Optional[str] = None
     sequence: Optional[int] = None
+    is_default: Optional[bool] = None
 
 
 class StageOut(StageBase):
