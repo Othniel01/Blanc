@@ -3,23 +3,28 @@ import { authFetch } from "./http";
 import endpoint from "./init";
 import { fetchProjectTasks, getProjectMembers } from "./project";
 import { Tag } from "./Tags";
+import { Task } from "../data/data";
 
-export interface Task {
-  id: number;
-  name: string;
-  description: string;
-  tags: string[];
-  assignees: { id: number; avatarUrl: string }[];
-  status: string;
-  stage_id: number;
-  messageCount: number;
-}
+// export interface Task {
+//   id: number;
+//   name: string;
+//   project_id: number;
+//   description: string;
+//   tags: Tag[];
+//   assignees: { id: number; avatarUrl: string }[];
+//   status: string;
+//   stage_id: number;
+//   messageCount: number;
+// }
 
 // -----------------------------
 // Core Task Routes
 // -----------------------------
-export async function fetchTaskById(taskId: number): Promise<Task> {
-  return authFetch(`${endpoint}/tasks/${taskId}`);
+export async function fetchTaskById(
+  taskId: number,
+  projectId: number
+): Promise<Task> {
+  return authFetch(`${endpoint}/tasks/projects/${projectId}/tasks/${taskId}`);
 }
 
 export async function updateTask(
@@ -94,6 +99,7 @@ export async function fetchTasksWithDetails(
       description: truncatedDescription,
       assignees,
       messageCount: messageCounts[task.id] || 0,
+      tags: tagsByTask[task.id] || [],
     } as Task;
   });
 }
@@ -145,5 +151,23 @@ export async function assignTaskUser(taskId: number, userId: number) {
 export async function unassignTaskUser(taskId: number, userId: number) {
   return authFetch(`${endpoint}/tasks/${taskId}/unassign/${userId}`, {
     method: "DELETE",
+  });
+}
+
+export async function createTask(
+  projectId: number,
+  data: {
+    name: string;
+    description?: string;
+    due_date?: string | null;
+    priority?: number;
+  }
+) {
+  return authFetch(`${endpoint}/tasks`, {
+    method: "POST",
+    body: JSON.stringify({
+      ...data,
+      project_id: projectId,
+    }),
   });
 }

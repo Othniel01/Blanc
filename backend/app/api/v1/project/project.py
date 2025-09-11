@@ -57,18 +57,18 @@ def create_project(
     )
     db.add(project_manager)
 
-    # ✅ Create default stages
     default_stages = [
-        {"name": "To Do", "sequence": 1},
-        {"name": "In Progress", "sequence": 2},
-        {"name": "In Review", "sequence": 3},
-        {"name": "Done", "sequence": 4},
+        {"name": "To Do", "sequence": 1, "is_default": True},
+        {"name": "In Progress", "sequence": 2, "is_default": False},
+        {"name": "In Review", "sequence": 3, "is_default": False},
+        {"name": "Done", "sequence": 4, "is_default": False},
     ]
 
     for stage_data in default_stages:
         stage = Stage(
             name=stage_data["name"],
             sequence=stage_data["sequence"],
+            is_default=stage_data["is_default"],
             project_id=new_project.id,
         )
         db.add(stage)

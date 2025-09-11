@@ -18,7 +18,6 @@ import {
   fetchProjectTasks,
   fetchMe,
 } from "@/lib/routes/project";
-import ProtectedRoute from "@/lib/components/portected-route";
 import Link from "next/link";
 import { Skeleton } from "@/lib/components/ui/skeleton";
 
@@ -87,7 +86,12 @@ export default function Page() {
     // <ProtectedRoute>
     <MainLayout>
       {/* Toggle Group */}
-      <div className="flex border-t-1  h-12 justify-end p-4">
+      <div className="flex border-t-1  h-12 justify-between p-1">
+        <Link href="/project/new">
+          <Button variant="outline" className="h-8 text-xs w-14">
+            New
+          </Button>
+        </Link>
         <ToggleGroup
           type="single"
           value={view}

@@ -111,10 +111,10 @@ class Stage(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     sequence = Column(Integer, default=0)
-
+    is_default = Column(Boolean, default=False)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"))
-    project = relationship("Project", back_populates="stages")
 
+    project = relationship("Project", back_populates="stages")
     tasks = relationship("Task", back_populates="stage", cascade="all, delete-orphan")
 
 

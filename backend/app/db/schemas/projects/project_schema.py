@@ -31,11 +31,11 @@ class ProjectCreate(ProjectBase):
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    start_date: datetime
+    start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    is_favourite: Optional[bool] = False
-    allow_milestones: Optional[bool] = False
-    allow_timesheets: Optional[bool] = False
+    is_favourite: Optional[bool] = None
+    allow_milestones: Optional[bool] = None
+    allow_timesheets: Optional[bool] = None
     status: Optional[str] = None
     active: Optional[bool] = None
 

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   AudioWaveform,
   // Blocks,
@@ -13,19 +13,19 @@ import {
   Settings2,
   // Sparkles,
   Trash2,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavFavorites } from "@/lib/components/nav-favorites"
-import { NavMain } from "@/lib/components/nav-main"
-import { NavSecondary } from "@/lib/components/nav-secondary"
-import { NavWorkspaces } from "@/lib/components/nav-workspaces"
+import { NavFavorites } from "@/lib/components/nav-favorites";
+import { NavMain } from "@/lib/components/nav-main";
+import { NavSecondary } from "@/lib/components/nav-secondary";
+import { NavWorkspaces } from "@/lib/components/nav-workspaces";
 // import { TeamSwitcher } from "@/lib/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarRail,
-} from "@/lib/components/ui/sidebar"
+} from "@/lib/components/ui/sidebar";
 
 // This is sample data.
 const data = {
@@ -59,7 +59,7 @@ const data = {
     // },
     {
       title: "Home",
-      url: "/dashboard",
+      url: "/projects",
       icon: Home,
       isActive: true,
     },
@@ -153,14 +153,14 @@ const data = {
       ],
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         {/* <TeamSwitcher teams={data.teams} /> */}
-        
+
         <NavMain items={data.navMain} />
       </SidebarHeader>
       <SidebarContent>
@@ -170,5 +170,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
