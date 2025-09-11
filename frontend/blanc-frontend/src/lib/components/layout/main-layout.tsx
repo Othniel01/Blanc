@@ -1,15 +1,5 @@
 import { AppSidebar } from "@/lib/components/app-sidebar";
 // import { NavActions } from "@/lib/components/nav-actions"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/lib/components/ui/breadcrumb";
-import { SlashIcon } from "lucide-react";
-import Link from "next/link";
 import { Separator } from "@/lib/components/ui/separator";
 import {
   SidebarInset,

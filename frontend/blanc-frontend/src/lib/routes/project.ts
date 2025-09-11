@@ -16,6 +16,16 @@ export async function updateProject(projectId: number, payload: unknown) {
   });
 }
 
+// Fetch favourite projects
+export async function fetchFavouriteProjects() {
+  return authFetch(`${endpoint}/projects/projects/favourites`);
+}
+
+// Fetch non-favourite projects
+export async function fetchNonFavouriteProjects() {
+  return authFetch(`${endpoint}/projects/projects/non-favourites`);
+}
+
 export async function fetchProjectTags(projectId: number) {
   try {
     return (await authFetch(`${endpoint}/projects/${projectId}/tags`)) ?? [];
