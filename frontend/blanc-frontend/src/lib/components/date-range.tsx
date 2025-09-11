@@ -28,13 +28,13 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   };
 
   return (
-    <div className="flex items-center gap-2 w-[50%]">
+    <div className="flex items-center gap-5 w-fit">
       {/* Start Date */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-start border-0 border-[transparent] border-b  rounded-none px-0 h-10 font-normal hover:border-gray-300 hover:bg-transparent focus:border-teal-700"
+            className="justify-start border-0 w-[50%] border-[transparent] border-b  rounded-none px-0 h-10 font-normal hover:border-gray-300 hover:bg-transparent focus:border-teal-700"
           >
             {dateRange?.from ? format(dateRange.from, "PPP") : "Start date"}
           </Button>
@@ -61,7 +61,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-start border-0 border-[transparent] border-b  rounded-none px-0 h-10 font-normal hover:border-gray-300 hover:bg-transparent focus:border-teal-700"
+            className=" justify-start border-0 border-[transparent] w-[50%] border-b  rounded-none px-0 h-10 font-normal hover:border-gray-300 hover:bg-transparent focus:border-teal-700"
           >
             {dateRange?.to ? format(dateRange.to, "PPP") : "End date"}
           </Button>

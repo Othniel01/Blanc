@@ -111,8 +111,8 @@ export default function Page() {
       {view === "card" ? (
         // --- Card View ---
         <div
-          className="grid w-full h-full bg-[#f5f6f8] p-4 gap-y-5 gap-x-1
-            grid-cols-[repeat(auto-fit,minmax(320px,1fr))] auto-rows-min"
+          className="grid w-full h-full bg-[#f5f6f8] p-4 gap-5
+    grid-cols-[repeat(auto-fit,minmax(320px,max-content))] auto-rows-min justify-start"
         >
           {loading
             ? Array.from({ length: 4 }).map((_, i) => (

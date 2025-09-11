@@ -154,6 +154,16 @@ def list_projects(
     return projects
 
 
+@router.get("/projects/favourites", response_model=List[ProjectOut])
+def get_favourite_projects(db: Session = Depends(get_db)):
+    return db.query(Project).filter(Project.is_favourite == True).all()
+
+
+@router.get("/projects/non-favourites", response_model=List[ProjectOut])
+def get_non_favourite_projects(db: Session = Depends(get_db)):
+    return db.query(Project).filter(Project.is_favourite == False).all()
+
+
 # Bulk delete
 
 
