@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { TableDemo } from "./table";
 import { addProjectMember } from "@/lib/routes/project";
-import { ErrorBlocking } from "./error-blocking";
+import { ErrorBlocking } from "./errorBlocking";
 
 export default function InviteMembers({ projectId }: { projectId: number }) {
   const [inviteCode, setInviteCode] = useState("");

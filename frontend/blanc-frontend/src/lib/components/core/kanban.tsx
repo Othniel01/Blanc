@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   closestCorners,
@@ -18,7 +19,6 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { Task } from "../../data/data";
-import { useQueryClient } from "@tanstack/react-query";
 import StageColumn from "@/lib/components/core/stageColumn";
 import TaskCard from "@/lib/components/core/taskCard";
 import { Badge, GripVertical, MoreVerticalIcon } from "lucide-react";
@@ -38,21 +38,19 @@ export interface Stage {
 }
 
 export default function Kanban({ projectId }: Props) {
+  const queryClient = useQueryClient();
   const { stagesQuery, updateStage } = useStages(projectId);
   const stages: Stage[] = stagesQuery.data ?? [];
-  const queryClient = useQueryClient();
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [activeType, setActiveType] = useState<"task" | "stage" | null>(null);
   const { mutate: updateTaskStage } = useUpdateTaskStage(projectId);
 
-  React.useEffect(() => {
-    if (!projectId) return;
-
-    fetchTasksWithDetails(projectId)
-      .then((fetchedTasks) => setTasks(fetchedTasks))
-      .catch((err) => console.error("Failed to fetch tasks:", err));
-  }, [projectId]);
+  // Fetch tasks with react-query
+  const { data: tasks = [], isLoading } = useQuery({
+    queryKey: ["tasks", projectId],
+    queryFn: () => fetchTasksWithDetails(projectId),
+    enabled: !!projectId, // Only fetch if projectId is provided
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -82,26 +80,29 @@ export default function Kanban({ projectId }: Props) {
       const activeTask = tasks.find((t) => t.id === activeTaskId);
       if (!activeTask) return;
 
-      let newstage_id: number | null = null;
+      let newStageId: number | null = null;
       const overIdStr = String(over.id);
 
       if (overIdStr.startsWith("stage-")) {
-        newstage_id = Number(overIdStr.replace("stage-", ""));
+        newStageId = Number(overIdStr.replace("stage-", ""));
       } else if (overIdStr.startsWith("task-")) {
         const overTaskId = Number(overIdStr.replace("task-", ""));
         const overTask = tasks.find((t) => t.id === overTaskId);
-        if (overTask) newstage_id = overTask.stage_id;
+        if (overTask) newStageId = overTask.stage_id;
       }
 
-      if (newstage_id === null || activeTask.stage_id === newstage_id) return;
+      if (newStageId === null || activeTask.stage_id === newStageId) return;
 
-      setTasks((prevTasks) =>
-        prevTasks.map((t) =>
-          t.id === activeTaskId ? { ...t, stage_id: newstage_id! } : t
-        )
+      // Optimistically update the cache
+      queryClient.setQueryData(
+        ["tasks", projectId],
+        (old: Task[] | undefined) =>
+          old?.map((t) =>
+            t.id === activeTaskId ? { ...t, stage_id: newStageId! } : t
+          )
       );
     },
-    [tasks]
+    [tasks, queryClient, projectId]
   );
 
   const tasksByStage = useMemo(() => {
@@ -121,11 +122,11 @@ export default function Kanban({ projectId }: Props) {
       if (!over) return;
 
       if (active.data.current?.type === "stage") {
-        const activestage_id = Number(String(active.id).replace("stage-", ""));
-        const overstage_id = Number(String(over.id).replace("stage-", ""));
+        const activeStageId = Number(String(active.id).replace("stage-", ""));
+        const overStageId = Number(String(over.id).replace("stage-", ""));
 
-        const oldIndex = stages.findIndex((s) => s.id === activestage_id);
-        const newIndex = stages.findIndex((s) => s.id === overstage_id);
+        const oldIndex = stages.findIndex((s) => s.id === activeStageId);
+        const newIndex = stages.findIndex((s) => s.id === overStageId);
 
         if (oldIndex !== newIndex) {
           const newStages: Stage[] = arrayMove(stages, oldIndex, newIndex).map(
@@ -146,52 +147,56 @@ export default function Kanban({ projectId }: Props) {
         const activeTask = tasks.find((t) => t.id === activeTaskId);
         if (!activeTask) return;
 
-        const activestage_id = activeTask.stage_id;
-        let newstage_id = activestage_id;
+        const activeStageId = activeTask.stage_id;
+        let newStageId = activeStageId;
         let isOverStage = false;
         let overTaskId: number | null = null;
 
         if (over.data.current?.type === "task") {
           overTaskId = Number(String(over.id).replace("task-", ""));
-          newstage_id = over.data.current.stage_id;
+          newStageId = over.data.current.stage_id;
         } else if (over.data.current?.type === "stage") {
-          newstage_id = over.data.current.stage_id;
+          newStageId = over.data.current.stage_id;
           isOverStage = true;
         } else {
           return;
         }
 
-        if (activeTaskId === overTaskId && activestage_id === newstage_id)
-          return;
+        if (activeTaskId === overTaskId && activeStageId === newStageId) return;
 
-        setTasks((prevTasks) => {
-          const updatedTasks = prevTasks.filter((t) => t.id !== activeTaskId);
-          const newTask = { ...activeTask, stage_id: newstage_id };
+        // Optimistically update the cache
+        queryClient.setQueryData(
+          ["tasks", projectId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            const updatedTasks = old.filter((t) => t.id !== activeTaskId);
+            const newTask = { ...activeTask, stage_id: newStageId };
 
-          const tasksInStage = tasksByStage[newstage_id] || [];
+            const tasksInStage = tasksByStage[newStageId] || [];
+            const newIndex = isOverStage
+              ? tasksInStage.length
+              : tasksInStage.findIndex((t) => t.id === overTaskId) +
+                (event.delta.y > 0 ? 1 : 0);
 
-          const newIndex = isOverStage
-            ? tasksInStage.length
-            : tasksInStage.findIndex((t) => t.id === overTaskId) +
-              (event.delta.y > 0 ? 1 : 0);
-
-          let globalIndex = 0;
-          for (const stage of stages) {
-            if (stage.id === newstage_id) {
-              globalIndex += newIndex;
-              break;
+            let globalIndex = 0;
+            for (const stage of stages) {
+              if (stage.id === newStageId) {
+                globalIndex += newIndex;
+                break;
+              }
+              globalIndex += tasksByStage[stage.id]?.length || 0;
             }
-            globalIndex += tasksByStage[stage.id]?.length || 0;
-          }
 
-          return [
-            ...updatedTasks.slice(0, globalIndex),
-            newTask,
-            ...updatedTasks.slice(globalIndex),
-          ];
-        });
-        // TODO: Implement useTasks hook with updateTask
-        updateTaskStage({ taskId: activeTaskId, stage_id: newstage_id });
+            return [
+              ...updatedTasks.slice(0, globalIndex),
+              newTask,
+              ...updatedTasks.slice(globalIndex),
+            ];
+          }
+        );
+
+        // Sync with server
+        updateTaskStage({ taskId: activeTaskId, stage_id: newStageId });
       }
     },
     [
@@ -224,7 +229,7 @@ export default function Kanban({ projectId }: Props) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners} // performance boost
+      collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -234,13 +239,39 @@ export default function Kanban({ projectId }: Props) {
           items={stages.map((s) => `stage-${s.id}`)}
           strategy={horizontalListSortingStrategy}
         >
-          {stages.map((stage) => (
-            <StageColumn
-              key={stage.id}
-              stage={stage}
-              tasks={tasksByStage[stage.id] || []}
-            />
-          ))}
+          {isLoading
+            ? // Skeleton loading for stages
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={`skeleton-stage-${i}`}
+                  className="flex flex-col gap-3 min-w-[320px] p-2"
+                >
+                  <div className="flex justify-between items-center bg-gray-100 rounded-sm p-2 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-300 rounded" />
+                      <div className="w-20 h-4 bg-gray-300 rounded" />
+                    </div>
+                    <div className="w-4 h-4 bg-gray-300 rounded" />
+                  </div>
+                  <div className="bg-gray-200 p-2 rounded-sm min-h-[50px]">
+                    {Array.from({ length: 2 }).map((_, j) => (
+                      <div
+                        key={`skeleton-task-${j}`}
+                        className="bg-white p-2 mb-2 rounded shadow"
+                      >
+                        <div className="w-full h-4 bg-gray-300 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            : stages.map((stage) => (
+                <StageColumn
+                  key={stage.id}
+                  stage={stage}
+                  tasks={tasksByStage[stage.id] || []}
+                />
+              ))}
         </SortableContext>
       </div>
       <DragOverlay dropAnimation={null}>

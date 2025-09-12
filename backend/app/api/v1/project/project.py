@@ -122,33 +122,27 @@ def list_projects(
         .options(joinedload(Project.owner))
     )
 
-    # Role filtering
     if manager_only:
         query = query.filter(ProjectMember.role == "manager")
     elif member_only:
         query = query.filter(ProjectMember.role == "member")
 
-    # Favourite filter
     if favourite:
         query = query.filter(Project.is_favourite == True)
 
-    # Archived filter
     if archived is True:
         query = query.filter(Project.active == False)
-    elif archived is False:
+    elif archived is False or archived is None:
         query = query.filter(Project.active == True)
 
-    # Date filters
     if start_date:
         query = query.filter(Project.start_date >= start_date)
     if end_date:
         query = query.filter(Project.start_date <= end_date)
 
-    # Tags filter
     if tags:
         query = query.outerjoin(Project.tags).filter(Tag.name.in_(tags)).distinct()
 
-    # Pagination
     projects = query.offset(skip).limit(limit).all()
 
     return projects
@@ -496,31 +490,40 @@ def duplicate_project(
             detail="Not authorized to duplicate this project. Only project managers can duplicate.",
         )
 
-    # create a duplicate project
+    # Generate a unique name for the duplicate
+    base_name = f"{project.name} (Copy)"
+    new_name = base_name
+    count = 1
+    while db.query(Project).filter(Project.name == new_name).first():
+        count += 1
+        new_name = f"{base_name} {count}"
+
+    # Create the duplicate project
     new_project = Project(
-        name=f"{project.name} (Copy)",
+        name=new_name,
         description=project.description,
         owner_id=current_user.id,
         allow_milestones=project.allow_milestones,
         is_favourite=False,
         allow_timesheets=project.allow_timesheets,
-        status="draft",
+        status=None,
         active=True,
         start_date=project.start_date,
         end_date=project.end_date,
     )
     db.add(new_project)
-    db.commit()
-    db.refresh(new_project)
+    db.flush()  # generate new_project.id without committing
 
-    # ensure duplicator is added as manager
+    # Add duplicator as manager
     project_member = ProjectMember(
         project_id=new_project.id, user_id=current_user.id, role="manager"
     )
     db.add(project_member)
-    db.commit()
 
-    return {"duplicated": new_project.id}
+    db.commit()  # commit both project + member together
+    db.refresh(new_project)
+
+    return {"duplicated": new_project.id, "name": new_project.name}
 
 
 # -----------------------------

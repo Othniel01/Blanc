@@ -43,9 +43,7 @@ def require_project_membership(db: Session, project_id: int, user_id: int):
     return project
 
 
-# -----------------------------
 # Create a task
-# -----------------------------
 @router.post("/", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 def create_task(
     task: TaskCreate,

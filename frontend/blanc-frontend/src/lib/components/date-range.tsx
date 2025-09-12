@@ -51,12 +51,10 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         </PopoverContent>
       </Popover>
 
-      {/* Arrow */}
       <div className="">
         <ArrowRightIcon className="h-4 w-4 text-gray-400 " />
       </div>
 
-      {/* End Date */}
       <Popover>
         <PopoverTrigger asChild>
           <Button

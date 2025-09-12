@@ -1,11 +1,13 @@
 import React from "react";
 import { Stage, Task } from "../../data/data";
-import { useDroppable } from "@dnd-kit/core"; // Simplified imports
+import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import TaskCard from "@/lib/components/core/taskCard";
 import { Badge } from "@/lib/components/ui/badge";
-import { PlusCircleIcon, MoreVerticalIcon, GripVertical } from "lucide-react";
+import { PlusCircleIcon, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
+import { StageMoreButton } from "./stageMore";
+import { useParams } from "next/navigation";
 
 interface Props {
   stage: Stage;
@@ -13,6 +15,8 @@ interface Props {
 }
 
 export default function StageColumn({ stage, tasks }: Props) {
+  const params = useParams();
+  const projectId = Number(params.id);
   const {
     attributes,
     listeners,
@@ -59,14 +63,20 @@ export default function StageColumn({ stage, tasks }: Props) {
           <Badge variant="default" className="text-xs">
             {tasks.length}
           </Badge>
-          <MoreVerticalIcon className="w-4 h-4 cursor-pointer" />
+          <StageMoreButton
+            isDragging={isDragging}
+            projectId={projectId}
+            stageId={stage.id}
+            taskIdsInStage={tasks.map((t) => t.id)}
+            onStageUpdated={() => {}}
+          />
         </div>
       </div>
 
       {/* Add task button */}
-      <div className="bg-white border rounded-sm flex justify-center items-center gap-2 text-xs h-10 w-full transition-colors hover:bg-gray-50">
+      {/* <div className="bg-white border rounded-sm flex justify-center items-center gap-2 text-xs h-10 w-full transition-colors hover:bg-gray-50">
         <PlusCircleIcon className="w-4 h-4" /> Add New task
-      </div>
+      </div> */}
 
       {/* Task list */}
       <div

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -36,12 +37,10 @@ export function LoginForm({
 
       const data = await res.json();
 
-      // ✅ Save tokens first
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
 
-      // ✅ Only now navigate to dashboard
-      router.replace("/projects"); // use replace to prevent back button
+      router.replace("/projects");
     } catch (err: any) {
       setError(err.message);
     } finally {

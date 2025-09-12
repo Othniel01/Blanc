@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import endpoint from "@/lib/routes/init";
 
 export interface Message {

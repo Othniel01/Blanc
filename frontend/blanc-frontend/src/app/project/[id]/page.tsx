@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -33,6 +34,7 @@ import {
 import InviteMembers from "@/lib/components/core/inviteMembers";
 import { Skeleton } from "@/lib/components/ui/skeleton";
 import IsFavourite from "@/lib/components/core/favourite";
+import ProjectStatus from "@/lib/components/statusProject";
 
 export default function ProjectId() {
   const params = useParams();
@@ -44,7 +46,6 @@ export default function ProjectId() {
     { id?: number; name: string }[]
   >([]);
 
-  // fetch project by ID + tags
   useEffect(() => {
     async function loadProject() {
       const project = await fetchProjectById(projectId);
@@ -204,6 +205,8 @@ export default function ProjectId() {
               </Button>
             </Link>
 
+            {/* PROJECT PRO */}
+
             <Breadcrumb className="text-lg">
               <BreadcrumbList>
                 <BreadcrumbItem>
@@ -222,8 +225,10 @@ export default function ProjectId() {
         </div>
 
         <div className="flex h-[94%] gap-2 justify-between  mt-4 w-full ">
-          <div className="bg-white w-[68%]  h-full border-1 border-solid border-sidebar-border">
+          <div className="bg-white relative w-[68%]  h-full border-1 border-solid border-sidebar-border">
             {/* title input */}
+
+            <ProjectStatus projectId={projectId} />
             <div className="p-5">
               <div className="flex items-center gap-2">
                 <IsFavourite
