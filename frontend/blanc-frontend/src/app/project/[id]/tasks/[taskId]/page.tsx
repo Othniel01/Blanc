@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -32,6 +33,7 @@ import MessageBox from "@/lib/components/core/chat";
 import StageWidget from "@/lib/components/core/stageWidget";
 import { Skeleton } from "@/lib/components/ui/skeleton";
 import PriorityRating from "@/lib/components/core/pRating";
+import { DatePicker } from "@/lib/components/date-pick";
 
 export default function TaskFormPage() {
   const params = useParams();
@@ -278,16 +280,16 @@ export default function TaskFormPage() {
                       Due Date
                     </label>
                     <div className="w-[60%]">
-                      <DateRangePicker
-                        value={{
-                          from: formData.due_date
+                      <DatePicker
+                        value={
+                          formData.due_date
                             ? new Date(formData.due_date)
-                            : undefined,
-                          to: undefined, // tasks may only need due_date
-                        }}
-                        onChange={(range) =>
-                          handleChange("due_date", range?.from?.toISOString())
+                            : undefined
                         }
+                        onChange={(date) =>
+                          handleChange("due_date", date?.toISOString())
+                        }
+                        placeholder="Due date"
                       />
                     </div>
                   </div>

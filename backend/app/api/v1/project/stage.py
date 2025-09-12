@@ -84,6 +84,20 @@ def delete_stage(
     if not stage:
         raise HTTPException(status_code=404, detail="Stage not found")
 
+    if stage.is_default:
+        raise HTTPException(status_code=400, detail="Default stage cannot be deleted")
+
+    default_stage = (
+        db.query(Stage)
+        .filter(Stage.project_id == project_id, Stage.is_default == True)
+        .first()
+    )
+    if not default_stage:
+        raise HTTPException(status_code=400, detail="Default stage not found")
+
+    for task in stage.tasks:
+        task.stage_id = default_stage.id
+
     db.delete(stage)
     db.commit()
     return {"ok": True}

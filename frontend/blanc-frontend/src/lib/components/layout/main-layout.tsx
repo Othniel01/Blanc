@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/lib/components/app-sidebar";
+import { AppSidebar } from "@/lib/components/appSidebar";
 // import { NavActions } from "@/lib/components/nav-actions"
 import { Separator } from "@/lib/components/ui/separator";
 import {

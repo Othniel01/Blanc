@@ -84,7 +84,7 @@ export default function MessageBox({
   }, [messages]);
 
   return (
-    <div className="bg-white w-full h-[700px] border border-sidebar-border flex flex-col">
+    <div className="bg-white w-[50%] h-[700px] border border-sidebar-border flex flex-col">
       <div className="message-box flex flex-col gap-5 pt-10 p-2 w-full flex-1 overflow-y-auto">
         {messages.map((msg) => (
           <div key={msg.id} className="user-message flex items-center gap-2">

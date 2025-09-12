@@ -32,7 +32,7 @@ export default function Tasks() {
   return (
     <MainLayout>
       <div className="flex items-center p-2 gap-1">
-        <Breadcrumb className="text-lg">
+        <Breadcrumb className="text-lg mr-4">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>

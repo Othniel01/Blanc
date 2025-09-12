@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/lib/components/layout";
 import { Grid, List, Flag, Star } from "lucide-react";
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/lib/components/ui/avatar";
 import { MoreButton } from "@/lib/components/core/more";
 import { Button } from "@/lib/components/ui/button";
-import ProjectsPage from "@/lib/components/project-list";
+import ProjectsPage from "@/lib/components/projectList";
 import { ToggleGroup, ToggleGroupItem } from "@/lib/components/ui/toggle-group";
 import {
   fetchProjects,
@@ -20,73 +21,61 @@ import {
 } from "@/lib/routes/project";
 import Link from "next/link";
 import { Skeleton } from "@/lib/components/ui/skeleton";
+import { useState } from "react";
+
+const fetchEnrichedProjects = async () => {
+  const data = await fetchProjects();
+
+  const enriched = await Promise.all(
+    data.map(async (project: any) => {
+      let tags: any[] = [];
+      let tasks: any[] = [];
+      let user: any = {};
+
+      try {
+        tags = (await fetchProjectTags(project.id)) ?? [];
+      } catch (e) {
+        console.warn(`Failed to fetch tags for project ${project.id}`, e);
+      }
+
+      try {
+        tasks = (await fetchProjectTasks(project.id)) ?? [];
+      } catch (e) {
+        console.warn(`Failed to fetch tasks for project ${project.id}`, e);
+      }
+
+      try {
+        user = (await fetchMe()) ?? {};
+      } catch (e) {
+        console.warn("Failed to fetch current user", e);
+      }
+
+      return {
+        ...project,
+        tags,
+        tasks: tasks.length,
+        avatar: user.profile_image || "https://github.com/shadcn.png",
+        dueDate: project.end_date
+          ? new Date(project.end_date).toLocaleDateString()
+          : "N/A",
+      };
+    })
+  );
+
+  return enriched;
+};
 
 export default function Page() {
   const [view, setView] = useState<"card" | "list">("card");
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadProjects() {
-      try {
-        const data = await fetchProjects();
-
-        // Optionally enrich each project with tags + tasks + owner image
-        const enriched = await Promise.all(
-          data.map(async (project: any) => {
-            let tags: any[] = [];
-            let tasks: any[] = [];
-            let user: any = {};
-
-            try {
-              tags = (await fetchProjectTags(project.id)) ?? [];
-            } catch (e) {
-              console.warn(`Failed to fetch tags for project ${project.id}`, e);
-            }
-
-            try {
-              tasks = (await fetchProjectTasks(project.id)) ?? [];
-            } catch (e) {
-              console.warn(
-                `Failed to fetch tasks for project ${project.id}`,
-                e
-              );
-            }
-
-            try {
-              user = (await fetchMe()) ?? {};
-            } catch (e) {
-              console.warn("Failed to fetch current user", e);
-            }
-
-            return {
-              ...project,
-              tags,
-              tasks: tasks.length,
-              avatar: user.profile_image || "https://github.com/shadcn.png",
-              dueDate: project.end_date
-                ? new Date(project.end_date).toLocaleDateString()
-                : "N/A",
-            };
-          })
-        );
-
-        setProjects(enriched);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false); // ✅ stop skeletons
-      }
-    }
-
-    loadProjects();
-  }, []);
+  const { data: projects, isLoading } = useQuery({
+    queryKey: ["projects"],
+    queryFn: fetchEnrichedProjects,
+  });
 
   return (
-    // <ProtectedRoute>
     <MainLayout>
-      {/* Toggle Group */}
-      <div className="flex border-t-1  h-12 justify-between p-1">
+      <div className="flex border-t-1 h-12 justify-between p-1">
         <Link href="/project/new">
           <Button variant="outline" className="h-8 text-xs w-14">
             New
@@ -107,14 +96,12 @@ export default function Page() {
         </ToggleGroup>
       </div>
 
-      {/* Conditionally Render View */}
       {view === "card" ? (
-        // --- Card View ---
         <div
           className="grid w-full h-full bg-[#f5f6f8] p-4 gap-5
     grid-cols-[repeat(auto-fit,minmax(320px,max-content))] auto-rows-min justify-start"
         >
-          {loading
+          {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
@@ -143,7 +130,7 @@ export default function Page() {
                   </div>
                 </div>
               ))
-            : projects.map((project) => (
+            : projects?.map((project) => (
                 <Link
                   key={project.id}
                   href={`/project/${project.id}/tasks`}
@@ -187,8 +174,8 @@ export default function Page() {
                   <div className="absolute right-4 top-4">
                     <div
                       onClick={(e) => {
-                        e.stopPropagation(); // stop bubbling
-                        e.preventDefault(); // stop link navigation
+                        e.stopPropagation();
+                        e.preventDefault();
                       }}
                     >
                       <MoreButton projectId={project.id} />
@@ -221,6 +208,5 @@ export default function Page() {
         </div>
       )}
     </MainLayout>
-    // </ProtectedRoute>
   );
 }

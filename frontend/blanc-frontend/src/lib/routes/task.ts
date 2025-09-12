@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/helpers/tasks.ts
 import { authFetch } from "./http";
 import endpoint from "./init";
@@ -121,6 +122,29 @@ export async function unassignTaskTag(taskId: number, tagId: number) {
   return authFetch(`${endpoint}/tags/task/${taskId}/unassign/${tagId}`, {
     method: "DELETE",
   });
+}
+
+export async function bulkArchiveTasks(taskIds: number[]): Promise<{
+  archived: number[];
+  unauthorized: number[];
+  not_found: number[];
+}> {
+  if (!taskIds.length) return { archived: [], unauthorized: [], not_found: [] };
+
+  try {
+    const res = await authFetch(`${endpoint}/tasks/bulk/archive`, {
+      method: "PUT",
+      body: JSON.stringify(taskIds),
+    });
+    return res as {
+      archived: number[];
+      unauthorized: number[];
+      not_found: number[];
+    };
+  } catch (e) {
+    console.error("Bulk archive failed", e);
+    return { archived: [], unauthorized: [], not_found: [] };
+  }
 }
 
 // -----------------------------

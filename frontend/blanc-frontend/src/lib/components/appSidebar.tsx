@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -10,8 +11,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { NavFavorites } from "@/lib/components/nav-favorites";
-import { NavMain } from "@/lib/components/nav-main";
-import { NavSecondary } from "@/lib/components/nav-secondary";
+import { NavMain } from "@/lib/components/navMain";
+import { NavSecondary } from "@/lib/components/navSecondary";
 import {
   Sidebar,
   SidebarContent,

@@ -27,8 +27,6 @@ export default function TaskCard({ task, stage_id, style, isDragging }: Props) {
     transition,
   };
 
-  console.log(task);
-
   return (
     <Link
       href={`/project/${task.project_id}/tasks/${task.id}`}
@@ -48,7 +46,7 @@ export default function TaskCard({ task, stage_id, style, isDragging }: Props) {
             e.stopPropagation(); // stop event bubbling
           }}
         >
-          <TaskMoreButton isDragging={isDragging} />
+          <TaskMoreButton taskId={task.id} projectId={task.project_id} />
         </div>
 
         <h3 className="font-medium text-base">{task.name}</h3>

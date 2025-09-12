@@ -26,11 +26,11 @@ project_tags = Table(
 
 
 class ProjectStatusEnum(str, enum.Enum):
-    in_progress = "in progress"
-    changes_requested = "changes requested"
-    approved = "approved"
-    cancelled = "cancelled"
-    done = "done"
+    on_track = "On Track"
+    at_risk = "At Risk"
+    off_track = "Off Track"
+    on_hold = "On Hold"
+    done = "Done"
 
 
 class Project(Base):
@@ -55,7 +55,8 @@ class Project(Base):
     allow_timesheets = Column(Boolean, default=False)
 
     # Status
-    status = Column(Enum(ProjectStatusEnum), default=ProjectStatusEnum.in_progress)
+    # default=ProjectStatusEnum.in_progress
+    status = Column(Enum(ProjectStatusEnum), nullable=True)
     active = Column(Boolean, default=True)  # archive toggle
 
     # Add this relationship to ProjectMember

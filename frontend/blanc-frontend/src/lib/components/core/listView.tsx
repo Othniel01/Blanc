@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -22,6 +23,7 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Badge } from "../ui/badge";
+import { MoreButton } from "./more";
 
 // Types
 type Column = {
@@ -31,7 +33,7 @@ type Column = {
 
 type ListViewProps = {
   columns: Column[];
-  data: Record<string, any>[]; // each row should have a unique "id"
+  data: Record<string, any>[];
 };
 
 export function ListView({ columns, data }: ListViewProps) {
@@ -88,13 +90,11 @@ export function ListView({ columns, data }: ListViewProps) {
     }
   };
 
-  // ✅ Utility to cut long text
   const truncate = (text: string, length = 30) =>
     text.length > length ? text.slice(0, length) + "..." : text;
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
       <div className="flex justify-between items-center gap-2">
         <Input
           placeholder="Search..."
@@ -104,7 +104,6 @@ export function ListView({ columns, data }: ListViewProps) {
         />
 
         <div className="flex items-center gap-2">
-          {/* Status Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">Status</Button>
@@ -127,7 +126,6 @@ export function ListView({ columns, data }: ListViewProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* View / Column Toggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">View</Button>
@@ -147,7 +145,6 @@ export function ListView({ columns, data }: ListViewProps) {
         </div>
       </div>
 
-      {/* Table */}
       <div className="border rounded-sm">
         <Table>
           <TableHeader className="bg-white">
@@ -181,7 +178,6 @@ export function ListView({ columns, data }: ListViewProps) {
                 {columns
                   .filter((c) => visibleCols.has(c.key))
                   .map((col) => {
-                    // ✅ Special case for tags
                     if (col.key === "tags") {
                       const tags = Array.isArray(row.tags) ? row.tags : [];
                       return (
@@ -207,7 +203,6 @@ export function ListView({ columns, data }: ListViewProps) {
                       );
                     }
 
-                    // ✅ Default case: truncate long text
                     return (
                       <TableCell key={col.key}>
                         {typeof row[col.key] === "string"
@@ -218,32 +213,7 @@ export function ListView({ columns, data }: ListViewProps) {
                   })}
 
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => router.push(`/project/${row.id}`)}
-                      >
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => alert("Duplicate row")}>
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => alert("Archive row")}>
-                        Archive
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => alert("Delete row")}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <MoreButton projectId={row.id} />
                 </TableCell>
               </TableRow>
             ))}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/routes/projects.ts
 import { authFetch } from "../routes/http";
 import endpoint from "../routes/init";
