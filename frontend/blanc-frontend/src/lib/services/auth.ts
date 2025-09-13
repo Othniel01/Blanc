@@ -31,10 +31,8 @@ export async function authFetch(url: string, options: RequestInit = {}) {
 
   const res = await fetch(url, { ...options, headers });
 
-  // If unauthorized, clear token
   if (res.status === 401) {
     clearToken();
-    // optionally redirect to login here if inside client code
   }
 
   return res;

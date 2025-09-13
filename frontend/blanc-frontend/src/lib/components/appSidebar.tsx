@@ -33,7 +33,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           favs.map((p: any) => ({
             name: p.name,
             url: `/project/${p.id}/tasks`,
-            emoji: "📁",
+            emoji: "⭐",
           }))
         );
       } catch (err) {

@@ -36,11 +36,11 @@ task_assignees = Table(
 
 # --- Task status enum (fixed options) ---
 class TaskStatusEnum(str, enum.Enum):
-    in_progress = "in progress"
-    changes_requested = "changes requested"
-    approved = "approved"
-    cancelled = "cancelled"
-    done = "done"
+    in_progress = "In Progress"
+    changes_requested = "Changes Requested"
+    approved = "Approved"
+    cancelled = "Cancelled"
+    done = "Done"
 
 
 class Task(Base):
@@ -89,6 +89,12 @@ class Task(Base):
     attachments = relationship(
         "TaskAttachment", back_populates="task", cascade="all, delete-orphan"
     )
+    subtasks = relationship(
+        "SubTask",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class TaskAttachment(Base):
@@ -115,7 +121,7 @@ class SubTask(Base):
     is_done = Column(Boolean, default=False)
 
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"))
-    task = relationship("Task", backref="subtasks")
+    task = relationship("Task", back_populates="subtasks")
 
     # Audit
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))

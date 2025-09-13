@@ -37,7 +37,7 @@ export async function fetchMessages(
     id: msg.id,
     author_id: msg.author?.id,
     username: msg.author?.username ?? "Unknown",
-    avatar: "https://github.com/othniel01.png", // optional, replace with msg.author.avatar if you add one later
+    avatar: "https://github.com/othniel01.png",
     fallback: msg.author?.username?.[0]?.toUpperCase() ?? "U",
     message: msg.content,
     timestamp: new Date(msg.created_at).toLocaleTimeString([], {

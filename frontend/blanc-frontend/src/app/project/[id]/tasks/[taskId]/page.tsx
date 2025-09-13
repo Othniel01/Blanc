@@ -34,6 +34,9 @@ import StageWidget from "@/lib/components/core/stageWidget";
 import { Skeleton } from "@/lib/components/ui/skeleton";
 import PriorityRating from "@/lib/components/core/pRating";
 import { DatePicker } from "@/lib/components/date-pick";
+import SubTaskList from "@/lib/components/core/subTask";
+import TaskStatus from "@/lib/components/statusTask";
+import ProtectedRoute from "@/lib/components/portectedRoute";
 
 export default function TaskFormPage() {
   const params = useParams();
@@ -188,158 +191,173 @@ export default function TaskFormPage() {
   }
 
   return (
-    <MainLayout>
-      <div className="bg-[#f5f6f8] w-full p-4 h-full">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4 w-fit flex-row-reverse items-center">
-            {isDirty && (
-              <div className="flex gap-2 items-center">
-                <Button
-                  onClick={handleSave}
-                  className="h-7 text-xs hover:bg-green-600"
-                >
-                  <SaveIcon /> Save
-                </Button>
-                <Button
-                  onClick={handleDiscard}
-                  variant="outline"
-                  className="h-7 text-xs"
-                >
-                  <XIcon /> Discard
-                </Button>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <Link href={`/project/${projectId}/tasks/new`}>
-                <Button variant="outline" className="h-8 text-xs w-14">
-                  New
-                </Button>
-              </Link>
+    <ProtectedRoute>
+      <MainLayout>
+        <div className="bg-[#f5f6f8] w-full p-4 h-full">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4 w-fit flex-row-reverse items-center">
+              {isDirty && (
+                <div className="flex gap-2 items-center">
+                  <Button
+                    onClick={handleSave}
+                    className="h-7 text-xs hover:bg-green-600"
+                  >
+                    <SaveIcon /> Save
+                  </Button>
+                  <Button
+                    onClick={handleDiscard}
+                    variant="outline"
+                    className="h-7 text-xs"
+                  >
+                    <XIcon /> Discard
+                  </Button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Link href={`/project/${projectId}/tasks/new`}>
+                  <Button variant="outline" className="h-8 text-xs w-14">
+                    New
+                  </Button>
+                </Link>
 
-              <div className="flex flex-col gap-1">
-                <Breadcrumb>
-                  <BreadcrumbList className="text-xs">
-                    <BreadcrumbItem>
-                      <BreadcrumbLink asChild>
-                        <Link href="/projects">Projects</Link>
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbLink asChild>
-                        <Link href={`/project/${projectId}/tasks`}>
-                          {project?.name || `Project ${projectId}`}
-                        </Link>
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>{formData.name}</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
-                <p className="text-xs font-medium text-teal-900">
+                <div className="flex flex-col gap-1">
+                  <Breadcrumb>
+                    <BreadcrumbList className="text-xs">
+                      <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                          <Link href="/projects">Projects</Link>
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                          <Link href={`/project/${projectId}/tasks`}>
+                            {project?.name || `Project ${projectId}`}
+                          </Link>
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>{formData.name}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </BreadcrumbList>
+                  </Breadcrumb>
+                  {/* <p className="text-xs font-medium text-teal-900">
                   {formData.name}
-                </p>
-              </div>
-            </div>
-          </div>
-          <StageWidget
-            taskId={taskId}
-            projectId={projectId}
-            currentStageId={formData.stage_id}
-          />
-        </div>
-        <div className="flex h-[94%] gap-2 justify-between mt-4 w-full ">
-          <div className="bg-white w-[68%] h-full border-1 border-solid border-sidebar-border">
-            <div className="p-5">
-              <input
-                value={formData.name || ""}
-                onChange={(e) => handleChange("name", e.target.value)}
-                type="text"
-                className="w-[60%] border-[transparent] text-3xl font-semibold h-10 border-0 border-b-1 hover:border-gray-400 focus:border-teal-700 outline-none"
-                placeholder="Task title..."
-                name="name"
-                id="name"
-              />
-
-              <div className="column w-full flex mt-5">
-                <div className="w-[60%]">
-                  <div className="flex w-full gap-10">
-                    <label htmlFor="tags" className="text-sm font-medium">
-                      Tags
-                    </label>
-                    <TagsInput
-                      availableTags={availableTags}
-                      initialTags={formData.tags || []}
-                      onChange={(tags) => handleChange("tags", tags)}
-                    />
-                  </div>
-                  <div className="w-full flex items-center gap-10 mt-4">
-                    <label htmlFor="date" className="text-sm font-medium">
-                      Due Date
-                    </label>
-                    <div className="w-[60%]">
-                      <DatePicker
-                        value={
-                          formData.due_date
-                            ? new Date(formData.due_date)
-                            : undefined
-                        }
-                        onChange={(date) =>
-                          handleChange("due_date", date?.toISOString())
-                        }
-                        placeholder="Due date"
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full flex items-center gap-10 mt-4">
-                    <label htmlFor="date" className="text-sm font-medium">
-                      Priority
-                    </label>
-                    <PriorityRating
-                      taskId={taskId}
-                      initialPriority={formData.priority ?? 0} // <-- use formData
-                      onUpdated={(p) => handleChange("priority", p)}
-                    />
-                  </div>
+                </p> */}
                 </div>
               </div>
             </div>
-
-            <Notebook
-              pages={[
-                {
-                  title: "Description",
-                  content: (
-                    <textarea
-                      value={formData.description || ""}
-                      onChange={(e) =>
-                        handleChange("description", e.target.value)
-                      }
-                      className="w-full resize-none text-sm border-0 outline-none h-80"
-                      placeholder="Task description..."
-                    />
-                  ),
-                },
-
-                {
-                  title: "Assigned Users",
-                  content: (
-                    <>
-                      <AssignUsers taskId={taskId} projectId={projectId} />
-                      <div className="mt-4">
-                        <AssignedUsersTable taskId={taskId} />
-                      </div>
-                    </>
-                  ),
-                },
-              ]}
+            <StageWidget
+              taskId={taskId}
+              projectId={projectId}
+              currentStageId={formData.stage_id}
             />
           </div>
-          <MessageBox object_type="task" object_id={taskId} />
+          <div className="flex h-[94%] gap-2 justify-between mt-4 w-full ">
+            <div className="bg-white relative w-[68%] h-full border-1 border-solid border-sidebar-border">
+              <div className="absolute right-4 top-5">
+                <TaskStatus taskId={taskId} projectId={projectId} />
+              </div>
+
+              <div className="p-5">
+                <input
+                  value={formData.name || ""}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  type="text"
+                  className="w-[60%] border-[transparent] text-3xl font-semibold h-10 border-0 border-b-1 hover:border-gray-400 focus:border-teal-700 outline-none"
+                  placeholder="Task title..."
+                  name="name"
+                  id="name"
+                />
+
+                <div className="column w-full flex mt-5">
+                  <div className="w-[60%]">
+                    <div className="flex w-full gap-10">
+                      <label htmlFor="tags" className="text-sm font-medium">
+                        Tags
+                      </label>
+                      <TagsInput
+                        availableTags={availableTags}
+                        initialTags={formData.tags || []}
+                        onChange={(tags) => handleChange("tags", tags)}
+                      />
+                    </div>
+                    <div className="w-full flex items-center gap-10 mt-4">
+                      <label htmlFor="date" className="text-sm font-medium">
+                        Due Date
+                      </label>
+                      <div className="w-[60%]">
+                        <DatePicker
+                          value={
+                            formData.due_date
+                              ? new Date(formData.due_date)
+                              : undefined
+                          }
+                          onChange={(date) =>
+                            handleChange("due_date", date?.toISOString())
+                          }
+                          placeholder="Due date"
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full flex items-center gap-10 mt-4">
+                      <label htmlFor="date" className="text-sm font-medium">
+                        Priority
+                      </label>
+                      <PriorityRating
+                        taskId={taskId}
+                        initialPriority={formData.priority ?? 0} // <-- use formData
+                        onUpdated={(p) => handleChange("priority", p)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Notebook
+                pages={[
+                  {
+                    title: "Description",
+                    content: (
+                      <textarea
+                        value={formData.description || ""}
+                        onChange={(e) =>
+                          handleChange("description", e.target.value)
+                        }
+                        className="w-full resize-none text-sm border-0 outline-none h-80"
+                        placeholder="Task description..."
+                      />
+                    ),
+                  },
+
+                  {
+                    title: "Sub Task's",
+                    content: (
+                      <>
+                        <SubTaskList taskId={taskId} />
+                      </>
+                    ),
+                  },
+
+                  {
+                    title: "Assigned Users",
+                    content: (
+                      <>
+                        <AssignUsers taskId={taskId} projectId={projectId} />
+                        <div className="mt-4">
+                          <AssignedUsersTable taskId={taskId} />
+                        </div>
+                      </>
+                    ),
+                  },
+                ]}
+              />
+            </div>
+            <MessageBox object_type="task" object_id={taskId} />
+          </div>
         </div>
-      </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 }

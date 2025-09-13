@@ -79,27 +79,6 @@ def create_project(
     return new_project
 
 
-# -----------------------------
-# Get all projects current user has access to
-# -----------------------------
-# @router.get("/", response_model=List[ProjectOut])
-# def get_projects(
-#     db: Session = Depends(get_db),
-#     current_user: Users = Depends(get_current_user),
-# ):
-#     projects = (
-#         db.query(Project)
-#         .join(ProjectMember, ProjectMember.project_id == Project.id)
-#         .filter(
-#             (Project.owner_id == current_user.id)
-#             | (ProjectMember.user_id == current_user.id)
-#         )
-#         .all()
-#     )
-#     if not projects:
-#         raise HTTPException(status_code=404, detail="No projects found")
-#     return projects
-
 
 @router.get("/projects")
 def list_projects(
@@ -149,13 +128,39 @@ def list_projects(
 
 
 @router.get("/projects/favourites", response_model=List[ProjectOut])
-def get_favourite_projects(db: Session = Depends(get_db)):
-    return db.query(Project).filter(Project.is_favourite == True).all()
+def get_favourite_projects(
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+):
+    return (
+        db.query(Project)
+        .join(ProjectMember, ProjectMember.project_id == Project.id)
+        .filter(
+            (Project.owner_id == current_user.id)
+            | (ProjectMember.user_id == current_user.id),
+            Project.is_favourite == True,
+            Project.active == True,
+        )
+        .all()
+    )
 
 
 @router.get("/projects/non-favourites", response_model=List[ProjectOut])
-def get_non_favourite_projects(db: Session = Depends(get_db)):
-    return db.query(Project).filter(Project.is_favourite == False).all()
+def get_non_favourite_projects(
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user),
+):
+    return (
+        db.query(Project)
+        .join(ProjectMember, ProjectMember.project_id == Project.id)
+        .filter(
+            (Project.owner_id == current_user.id)
+            | (ProjectMember.user_id == current_user.id),
+            Project.is_favourite == False,
+            Project.active == True,
+        )
+        .all()
+    )
 
 
 # Bulk delete
@@ -182,7 +187,7 @@ def bulk_delete_projects(
             not_found_projects.append(pid)
             continue
 
-        # check membership & role
+     
         member = (
             db.query(ProjectMember)
             .filter(
@@ -207,8 +212,6 @@ def bulk_delete_projects(
         "not_found": not_found_projects,
     }
 
-
-#  Bulk Archive
 
 
 @router.put("/bulk/archive", status_code=status.HTTP_200_OK)
@@ -248,7 +251,7 @@ def bulk_archive_projects(
     }
 
 
-# Bulk Duplicate
+
 @router.post("/bulk/duplicate", status_code=status.HTTP_201_CREATED)
 def bulk_duplicate_projects(
     project_ids: List[int],
@@ -307,9 +310,7 @@ def bulk_duplicate_projects(
     }
 
 
-# -----------------------------
-# Get a project by ID
-# -----------------------------
+
 @router.get("/{project_id}", response_model=ProjectOut)
 def get_project(
     project_id: int,

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Task, updateTask } from "@/lib/routes/task";
+import { updateTask } from "@/lib/routes/task";
+import { Task } from "../data/data";
 
 export interface UpdateTaskStageInput {
   taskId: number;

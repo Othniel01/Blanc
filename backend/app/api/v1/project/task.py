@@ -17,6 +17,8 @@ from ....models.users import Users
 from ....services.auth_service import get_current_user
 from ....models.message import Message
 from ....models.project import Project, ProjectMember, Stage, Tag
+from sqlalchemy.orm import joinedload
+
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -109,7 +111,6 @@ def create_task(
     return new_task
 
 
-# -----------------------------
 @router.get("/", response_model=List[TaskOut])
 def get_tasks(
     project_id: Optional[int] = Query(None),
@@ -130,7 +131,6 @@ def get_tasks(
 ):
     query = db.query(Task)
 
-    # Scope
     if project_id:
         require_project_membership(db, project_id, current_user.id)
         query = query.filter(Task.project_id == project_id)
@@ -144,13 +144,11 @@ def get_tasks(
             )
         )
 
-    # Archived
     if archived is True:
         query = query.filter(Task.active == False)
     elif archived is False:
         query = query.filter(Task.active == True)
 
-    # Open = active & not done
     if open_only:
         query = query.filter(
             Task.active == True,
@@ -163,25 +161,23 @@ def get_tasks(
             ),
         )
 
-    # Created by current user
     if created_by_me:
         query = query.filter(Task.creator_id == current_user.id)
 
-    # Assigned to current user
     if assigned_to_me:
         query = query.join(Task.assignees).filter(Users.id == current_user.id)
 
-    # Due dates
+    # for my due dates
     if due_before:
         query = query.filter(Task.due_date <= due_before)
     if due_after:
         query = query.filter(Task.due_date >= due_after)
 
-    # Tags
+    # for the taags
     if tags:
         query = query.join(Task.tags).filter(Tag.name.in_(tags)).distinct()
 
-    # Sorting
+    # my query for sorting
     if order_by:
         desc_order = order_by.startswith("-")
         field_name = order_by.lstrip("-")
@@ -199,7 +195,6 @@ def get_tasks(
                 desc(sort_map[field_name]) if desc_order else asc(sort_map[field_name])
             )
 
-    # Pagination
     tasks = query.offset(skip).limit(limit).all()
 
     return [TaskOut.from_orm_with_assignees(task) for task in tasks]
@@ -256,8 +251,6 @@ def bulk_delete_tasks(
 
 
 #  Bulk Archive
-
-
 @router.put("/bulk/archive", status_code=status.HTTP_200_OK)
 def bulk_archive_tasks(
     task_ids: List[int],
@@ -387,7 +380,10 @@ def get_task_in_project(
     require_project_membership(db, project_id, current_user.id)
 
     task = (
-        db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
+        db.query(Task)
+        .options(joinedload(Task.assignees))
+        .filter(Task.id == task_id, Task.project_id == project_id)
+        .first()
     )
     if not task:
         raise HTTPException(status_code=404, detail="Task not found in this project")

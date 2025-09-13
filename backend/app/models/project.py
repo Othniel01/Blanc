@@ -37,7 +37,7 @@ class Project(Base):
     __tablename__ = "projects"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=False, index=True)
     description = Column(Text, nullable=True)
 
     # Project owner

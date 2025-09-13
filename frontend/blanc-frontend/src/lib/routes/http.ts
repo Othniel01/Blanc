@@ -19,7 +19,7 @@ async function refreshAccessToken(): Promise<string> {
         if (!res.ok) {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
-          window.location.href = "/login"; // redirect to login
+          window.location.href = "/login";
           throw new Error("Session expired, please log in again.");
         }
         const data = await res.json();
@@ -27,7 +27,7 @@ async function refreshAccessToken(): Promise<string> {
         return data.access_token;
       })
       .finally(() => {
-        refreshPromise = null; // reset so next failure can trigger refresh
+        refreshPromise = null;
       });
   }
 
@@ -47,12 +47,10 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     },
   });
 
-  // If access token expired, try refreshing
   if (res.status === 401) {
     try {
       token = await refreshAccessToken();
 
-      // Retry original request with new token
       res = await fetch(url, {
         ...options,
         headers: {
@@ -80,4 +78,9 @@ export async function authFetch(url: string, options: RequestInit = {}) {
   } catch {
     return null;
   }
+}
+
+export { refreshAccessToken };
+export function getRefreshToken() {
+  return localStorage.getItem("refresh_token");
 }

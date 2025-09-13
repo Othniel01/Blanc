@@ -1,8 +1,15 @@
-# app/db/seed.py  Seed this file
+from sqlalchemy import Column, String, Text
+from sqlalchemy.orm import declarative_base, Session
+from app.db.session import SessionLocal
 
-from sqlalchemy.orm import Session
-from app.models.roles import Role
-from app.db.session import SessionLocal, Base, engine
+# create a fresh Base to avoid loading all other models
+Base = declarative_base()
+
+
+class Role(Base):
+    __tablename__ = "roles"
+    name = Column(String, primary_key=True)
+    description = Column(Text)
 
 
 def seed_roles(db: Session):
@@ -10,18 +17,13 @@ def seed_roles(db: Session):
         {"name": "admin", "description": "Administrator with full access"},
         {"name": "user", "description": "Default role for normal users"},
     ]
-
-    for role in default_roles:
-        existing = db.query(Role).filter_by(name=role["name"]).first()
-        if not existing:
-            db.add(Role(**role))
+    for r in default_roles:
+        if not db.query(Role).filter_by(name=r["name"]).first():
+            db.add(Role(**r))
     db.commit()
 
 
 if __name__ == "__main__":
-    # Create tables if they don’t exist
-    Base.metadata.create_all(bind=engine)
-
     db = SessionLocal()
     try:
         seed_roles(db)

@@ -40,23 +40,25 @@ export interface Stage {
 export default function Kanban({ projectId }: Props) {
   const queryClient = useQueryClient();
   const { stagesQuery, updateStage } = useStages(projectId);
-  const stages: Stage[] = stagesQuery.data ?? [];
+  const stages: Stage[] = useMemo(
+    () => stagesQuery.data ?? [],
+    [stagesQuery.data]
+  );
   const [activeId, setActiveId] = useState<number | null>(null);
   const [activeType, setActiveType] = useState<"task" | "stage" | null>(null);
+
   const { mutate: updateTaskStage } = useUpdateTaskStage(projectId);
 
-  // Fetch tasks with react-query
+  // Fetch tasks with react-query v5 signature
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks", projectId],
     queryFn: () => fetchTasksWithDetails(projectId),
-    enabled: !!projectId, // Only fetch if projectId is provided
+    enabled: !!projectId,
   });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
     })
   );
 
@@ -93,13 +95,10 @@ export default function Kanban({ projectId }: Props) {
 
       if (newStageId === null || activeTask.stage_id === newStageId) return;
 
-      // Optimistically update the cache
-      queryClient.setQueryData(
-        ["tasks", projectId],
-        (old: Task[] | undefined) =>
-          old?.map((t) =>
-            t.id === activeTaskId ? { ...t, stage_id: newStageId! } : t
-          )
+      queryClient.setQueryData(["tasks", projectId], (old?: Task[]) =>
+        old?.map((t) =>
+          t.id === activeTaskId ? { ...t, stage_id: newStageId! } : t
+        )
       );
     },
     [tasks, queryClient, projectId]
@@ -124,7 +123,6 @@ export default function Kanban({ projectId }: Props) {
       if (active.data.current?.type === "stage") {
         const activeStageId = Number(String(active.id).replace("stage-", ""));
         const overStageId = Number(String(over.id).replace("stage-", ""));
-
         const oldIndex = stages.findIndex((s) => s.id === activeStageId);
         const newIndex = stages.findIndex((s) => s.id === overStageId);
 
@@ -133,11 +131,16 @@ export default function Kanban({ projectId }: Props) {
             (s, i) => ({ ...s, sequence: i + 1 })
           );
 
-          queryClient.setQueryData(["stages", projectId], newStages);
+          queryClient.setQueryData(["stages", projectId], () => newStages);
 
-          newStages.forEach((s) =>
-            updateStage.mutate({ id: s.id, sequence: s.sequence })
-          );
+          // Batch update stages on server
+          Promise.all(
+            newStages.map((s) =>
+              updateStage.mutateAsync({ id: s.id, sequence: s.sequence })
+            )
+          ).catch(() => {
+            queryClient.invalidateQueries({ queryKey: ["stages", projectId] });
+          });
         }
         return;
       }
@@ -164,39 +167,49 @@ export default function Kanban({ projectId }: Props) {
 
         if (activeTaskId === overTaskId && activeStageId === newStageId) return;
 
-        // Optimistically update the cache
-        queryClient.setQueryData(
-          ["tasks", projectId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            const updatedTasks = old.filter((t) => t.id !== activeTaskId);
-            const newTask = { ...activeTask, stage_id: newStageId };
+        const previousTasks = queryClient.getQueryData(["tasks", projectId]);
+        queryClient.setQueryData(["tasks", projectId], (old?: Task[]) => {
+          if (!old) return old;
 
-            const tasksInStage = tasksByStage[newStageId] || [];
-            const newIndex = isOverStage
-              ? tasksInStage.length
-              : tasksInStage.findIndex((t) => t.id === overTaskId) +
-                (event.delta.y > 0 ? 1 : 0);
+          const updatedTasks = old.filter((t) => t.id !== activeTaskId);
 
-            let globalIndex = 0;
-            for (const stage of stages) {
-              if (stage.id === newStageId) {
-                globalIndex += newIndex;
-                break;
-              }
-              globalIndex += tasksByStage[stage.id]?.length || 0;
+          const newTask = { ...activeTask, stage_id: newStageId };
+
+          const tasksInStage = tasksByStage[newStageId] || [];
+
+          const newIndex = isOverStage
+            ? tasksInStage.length
+            : tasksInStage.findIndex((t) => t.id === overTaskId) +
+              (event.delta.y > 0 ? 1 : 0);
+
+          let globalIndex = 0;
+          for (const stage of stages) {
+            if (stage.id === newStageId) {
+              globalIndex += newIndex;
+              break;
             }
+            globalIndex += tasksByStage[stage.id]?.length || 0;
+          }
 
-            return [
-              ...updatedTasks.slice(0, globalIndex),
-              newTask,
-              ...updatedTasks.slice(globalIndex),
-            ];
+          return [
+            ...updatedTasks.slice(0, globalIndex),
+            newTask,
+            ...updatedTasks.slice(globalIndex),
+          ];
+        });
+
+        updateTaskStage(
+          { taskId: activeTaskId, stage_id: newStageId },
+          {
+            onError: () => {
+              queryClient.setQueryData(
+                ["tasks", projectId],
+                () => previousTasks
+              );
+              queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+            },
           }
         );
-
-        // Sync with server
-        updateTaskStage({ taskId: activeTaskId, stage_id: newStageId });
       }
     },
     [
@@ -240,8 +253,7 @@ export default function Kanban({ projectId }: Props) {
           strategy={horizontalListSortingStrategy}
         >
           {isLoading
-            ? // Skeleton loading for stages
-              Array.from({ length: 3 }).map((_, i) => (
+            ? Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={`skeleton-stage-${i}`}
                   className="flex flex-col gap-3 min-w-[320px] p-2"
@@ -274,7 +286,7 @@ export default function Kanban({ projectId }: Props) {
               ))}
         </SortableContext>
       </div>
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay dropAnimation={{ duration: 0 }}>
         {activeStage && (
           <div
             className="flex flex-col gap-3"

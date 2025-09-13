@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageCircleMoreIcon } from "lucide-react";
 import { TaskMoreButton } from "./taskMore";
 import Link from "next/link";
+import TaskStatus from "../statusTask";
 
 interface Props {
   task: Task;
@@ -68,12 +69,23 @@ export default function TaskCard({ task, stage_id, style, isDragging }: Props) {
         <hr className="w-full mt-4 h-[.5px] bg-gray-400" />
         <div className="mt-1 flex justify-between items-center">
           <div className="*:data-[slot=avatar]:ring-background  flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
-            {task.assignees.slice(0, 3).map((user) => (
-              <Avatar key={user.id}>
-                <AvatarImage src={user.avatarUrl} alt={`User ${user.id}`} />
-                <AvatarFallback>{user.id}</AvatarFallback>
-              </Avatar>
-            ))}
+            {task.assignees.slice(0, 3).map((user) => {
+              // generate fallback initials
+              const initials = user.username?.[0] ?? "";
+
+              return (
+                <Avatar key={user.id}>
+                  {user.profile_image ? (
+                    <AvatarImage
+                      src={user.profile_image}
+                      alt={`${user.username}`}
+                    />
+                  ) : (
+                    <AvatarFallback>{initials || "?"}</AvatarFallback>
+                  )}
+                </Avatar>
+              );
+            })}
             {task.assignees.length > 3 && (
               <span className="text-xs font-medium">
                 +{task.assignees.length - 3}
@@ -86,7 +98,7 @@ export default function TaskCard({ task, stage_id, style, isDragging }: Props) {
               <MessageCircleMoreIcon />
               <p>{task.messageCount}</p>
             </div>
-            <div className="border bg-gray-100 rounded-full border-sidebar-border h-8 w-8"></div>
+            <TaskStatus taskId={task.id} projectId={task.project_id} />
           </div>
         </div>
       </div>

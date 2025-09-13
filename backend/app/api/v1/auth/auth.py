@@ -27,15 +27,20 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
-    # Get default role "user"
+async def create_user(
+    db: db_dependency,
+    create_user_request: CreateUserRequest,
+):
+
+    if hasattr(create_user_request, "website") and create_user_request.website:
+        raise HTTPException(status_code=400, detail="Spam detected.")
+
     default_role = db.query(Role).filter(Role.name == "user").first()
     if not default_role:
         raise HTTPException(
             status_code=500, detail="Default role not found. Seed roles first."
         )
 
-    # Generate unique invite code
     code = generate_invite_code()
     while db.query(Users).filter(Users.invite_code == code).first():
         code = generate_invite_code()
@@ -43,10 +48,7 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
     create_user_model = Users(
         email=create_user_request.email,
         username=create_user_request.username,
-        first_name=create_user_request.first_name,
-        last_name=create_user_request.last_name,
-        role_id=default_role.id,  # assign FK, not string
-        phone_number=create_user_request.phone_number,
+        role_id=default_role.id,
         hashed_password=bcrypt_context.hash(create_user_request.password),
         is_active=True,
         invite_code=code,

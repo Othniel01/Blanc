@@ -3,6 +3,15 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+class AssigneeOut(BaseModel):
+    id: int
+    profile_image: Optional[str] = None
+    username: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class TaskBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -35,7 +44,7 @@ class TaskOut(TaskBase):
     id: int
     project_id: int
     stage_id: Optional[int] = None
-    assignee_ids: List[int] = Field(default_factory=list)
+    assignees: List[AssigneeOut] = []
     milestone_id: Optional[int] = None
     creator_id: Optional[int] = None
     created_at: datetime
@@ -60,7 +69,7 @@ class TaskOut(TaskBase):
             creator_id=task.creator_id,
             created_at=task.created_at,
             updated_at=task.updated_at,
-            assignee_ids=[u.id for u in task.assignees],
+            assignees=[AssigneeOut.model_validate(u) for u in task.assignees],
         )
 
 

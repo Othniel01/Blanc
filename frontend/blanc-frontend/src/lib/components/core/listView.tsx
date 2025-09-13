@@ -109,17 +109,13 @@ export function ListView({ columns, data }: ListViewProps) {
               <Button variant="outline">Status</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {[
-                "in progress",
-                "changes requested",
-                "approved",
-                "cancelled",
-                "done",
-              ].map((s) => (
-                <DropdownMenuItem key={s} onClick={() => setStatus(s)}>
-                  {s}
-                </DropdownMenuItem>
-              ))}
+              {["On Track", "At Risk", "Off Track", "On Hold", "Done"].map(
+                (s) => (
+                  <DropdownMenuItem key={s} onClick={() => setStatus(s)}>
+                    {s}
+                  </DropdownMenuItem>
+                )
+              )}
               <DropdownMenuItem onClick={() => setStatus(null)}>
                 Clear
               </DropdownMenuItem>

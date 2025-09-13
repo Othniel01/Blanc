@@ -18,9 +18,7 @@ export async function fetchProjectsWithTags() {
         id: p.id,
         name: p.name,
         tags, // array of {id, name, color}
-        owner: p.owner
-          ? `${p.owner.first_name || ""} ${p.owner.last_name || ""}`.trim()
-          : "—",
+        owner: p.owner ? `${p.owner.username || ""}`.trim() : "—",
         status: p.status,
       };
     })

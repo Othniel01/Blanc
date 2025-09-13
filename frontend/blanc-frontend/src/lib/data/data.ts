@@ -7,7 +7,11 @@ export interface Task {
   project_id: number;
   description: string;
   tags: Tag[];
-  assignees: { id: number; avatarUrl: string }[];
+  assignees: {
+    username: string;
+    id: number;
+    profile_image: string | null;
+  }[];
   status: string;
   stage_id: number;
   messageCount: number;

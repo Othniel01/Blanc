@@ -37,7 +37,7 @@ export async function updateTask(
     status: string;
     active: boolean;
     stage_id: number;
-    assignee_ids: number[];
+    assignees: { id: number; profile_image: string | null }[];
     milestone_id: number;
     priority: number;
   }>
@@ -98,7 +98,7 @@ export async function fetchTasksWithDetails(
     return {
       ...task,
       description: truncatedDescription,
-      assignees,
+      assignees: task.assignees || [],
       messageCount: messageCounts[task.id] || 0,
       tags: tagsByTask[task.id] || [],
     } as Task;

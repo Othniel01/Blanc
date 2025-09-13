@@ -1,43 +1,66 @@
-// "use client";
+"use client";
 
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/navigation";
-// import { getToken, clearToken } from "@/lib/services/auth";
+import { useEffect, useState, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { getRefreshToken, refreshAccessToken } from "@/lib/routes/http";
+import { clearToken, getToken } from "../services/auth";
 
-// export default function ProtectedRoute({
-//   children,
-// }: {
-//   children: React.ReactNode;
-// }) {
-//   const router = useRouter();
-//   const [checking, setChecking] = useState(true); // track token validation
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
 
-//   useEffect(() => {
-//     const token = getToken();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
-//     if (!token) {
-//       router.replace("/login");
-//       return;
-//     }
+  useEffect(() => {
+    const verifyToken = async () => {
+      let token = getToken();
 
-//     // check token expiry
-//     try {
-//       const payload = JSON.parse(atob(token.split(".")[1]));
-//       if (payload.exp * 1000 < Date.now()) {
-//         clearToken();
-//         router.replace("/login");
-//       }
-//     } catch {
-//       clearToken();
-//       router.replace("/login");
-//     } finally {
-//       setChecking(false);
-//     }
-//   }, [router]);
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
 
-//   if (checking) {
-//     return <p>Loading...</p>; // or a spinner
-//   }
+      const isExpired = () => {
+        try {
+          const payload = JSON.parse(atob(token!.split(".")[1]));
+          return payload.exp * 1000 < Date.now();
+        } catch {
+          return true;
+        }
+      };
 
-//   return <>{children}</>;
-// }
+      if (isExpired()) {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          clearToken();
+          router.replace("/login");
+          return;
+        }
+
+        try {
+          token = await refreshAccessToken();
+        } catch {
+          clearToken();
+          router.replace("/login");
+          return;
+        }
+      }
+
+      setChecking(false);
+    };
+
+    verifyToken();
+  }, [router]);
+
+  if (checking) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Checking authentication...
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}

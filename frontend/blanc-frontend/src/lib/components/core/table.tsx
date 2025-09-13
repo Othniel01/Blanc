@@ -37,8 +37,6 @@ export function TableDemo({
       try {
         const data = await getProjectMembers(projectId);
         setMembers(data);
-        // If your backend returns current user role, set it here
-        // Otherwise, store role in auth context and setCurrentUserRole(roleFromAuth)
       } catch (err: any) {
         console.error("Failed to fetch members", err);
       }
